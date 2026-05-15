@@ -44,7 +44,7 @@ export function CreateTournamentTrigger({
         description="Configurá tu liga y reglas. Después podés invitar gente desde Mis ligas con Compartir torneo o el código TMB-XXXX."
         footer={
           <p className="text-center text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-            Timba Mundial · Código y link de invitación
+            timbafulbo · Código y link de invitación
           </p>
         }
       >

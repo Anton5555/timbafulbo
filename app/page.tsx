@@ -65,12 +65,10 @@ export default async function Page() {
         <div className="flex flex-col gap-8 text-left">
           <header className="flex flex-col items-start gap-4">
             <div className="bg-primary px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-primary-foreground uppercase">
-              World Cup 2026 Edition
+              Mundial 2026
             </div>
-            <h1 className="text-5xl font-black tracking-tighter uppercase italic sm:text-7xl">
-              TIMBA
-              <br />
-              <span className="text-primary">MUNDIAL</span>
+            <h1 className="text-5xl font-black tracking-tighter uppercase italic text-primary sm:text-7xl">
+              timbafulbo
             </h1>
             <p className="max-w-[40ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
               La plataforma definitiva para gestionar tus prodes. Creá ligas,
@@ -139,7 +137,7 @@ export default async function Page() {
 
       <footer className="mt-16 flex w-full max-w-6xl flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 opacity-50 sm:flex-row">
         <span className="text-[10px] tracking-[0.2em] uppercase">
-          © 2026 Timba Mundial
+          © 2026 timbafulbo
         </span>
         <div className="font-mono text-[10px] text-muted-foreground uppercase">
           (Pulsá <kbd className="border border-border px-1 font-mono">d</kbd>{" "}

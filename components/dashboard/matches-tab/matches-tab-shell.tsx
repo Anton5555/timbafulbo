@@ -86,7 +86,7 @@ export function MatchesTabShell({
               <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase shrink-0">
                 Liga
               </span>
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <div className="flex w-full max-w-md min-w-0 items-center gap-2 sm:w-auto">
                 <Select
                   value={tournamentId ?? ""}
                   onValueChange={(v) => {
@@ -95,7 +95,7 @@ export function MatchesTabShell({
                 >
                   <SelectTrigger
                     size="sm"
-                    className="w-full min-w-0 max-w-md rounded-none border-border bg-background font-bold sm:w-72"
+                    className="min-w-0 flex-1 rounded-none border-border bg-background font-bold sm:w-72"
                   >
                     <SelectValue placeholder="Elegí una liga" />
                   </SelectTrigger>
@@ -119,13 +119,10 @@ export function MatchesTabShell({
                     aria-label="Crear torneo"
                     title="Crear torneo"
                   >
-                    <PlusIcon className="size-4 text-primary" weight="bold" aria-hidden />
+                    <PlusIcon className="text-primary" weight="bold" aria-hidden />
                   </Button>
                 </CreateTournamentTrigger>
               </div>
-              <p className="max-w-2xl text-[10px] font-bold leading-relaxed tracking-widest text-muted-foreground uppercase sm:basis-full">
-                Cambiá el resultado y se guarda solo, incluso si queda 0-0.
-              </p>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
@@ -144,7 +141,7 @@ export function MatchesTabShell({
                   aria-label="Crear torneo"
                   title="Crear torneo"
                 >
-                  <PlusIcon className="size-4 text-primary" weight="bold" aria-hidden />
+                  <PlusIcon className="text-primary" weight="bold" aria-hidden />
                 </Button>
               </CreateTournamentTrigger>
             </div>
@@ -158,33 +155,38 @@ export function MatchesTabShell({
       </div>
 
       {predictionsEnabled ? (
-        <div className="flex flex-wrap gap-2">
-          {(
-            [
-              ["all", "Todos"],
-              ["pending", "Pendientes"],
-              ["finished", "Finalizados"],
-            ] as const
-          ).map(([key, label]) => {
-            const active = (matchFilter ?? "pending") === key
-            return (
-              <Button
-                key={key}
-                type="button"
-                variant={active ? "default" : "outline"}
-                size="sm"
-                className={cn(
-                  "rounded-none text-[10px] font-bold tracking-widest uppercase",
-                  active && "ring-1 ring-primary/30"
-                )}
-                onClick={() => {
-                  void setMatchFilter(key)
-                }}
-              >
-                {label}
-              </Button>
-            )
-          })}
+        <div className="flex flex-col gap-2">
+          <p className="text-[10px] font-bold leading-relaxed tracking-widest text-muted-foreground uppercase">
+            Cambiá el resultado y se guarda solo, incluso si queda 0-0.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["all", "Todos"],
+                ["pending", "Pendientes"],
+                ["finished", "Finalizados"],
+              ] as const
+            ).map(([key, label]) => {
+              const active = (matchFilter ?? "pending") === key
+              return (
+                <Button
+                  key={key}
+                  type="button"
+                  variant={active ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "rounded-none text-[10px] font-bold tracking-widest uppercase",
+                    active && "ring-1 ring-primary/30"
+                  )}
+                  onClick={() => {
+                    void setMatchFilter(key)
+                  }}
+                >
+                  {label}
+                </Button>
+              )
+            })}
+          </div>
         </div>
       ) : null}
 

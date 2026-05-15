@@ -54,7 +54,7 @@ export function InviteToTournamentTrigger({
           description="Agregá correos y gestioná invitaciones pendientes."
           footer={
             <p className="text-center text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-              Timba Mundial · Invites con token seguro
+              timbafulbo · Invites con token seguro
             </p>
           }
         >

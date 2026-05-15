@@ -1,10 +1,10 @@
 ---
-description: Formulario crear torneo (Sheet/Drawer), estética Timba, invitaciones Resend vs código TMB
+description: Formulario crear torneo (Sheet/Drawer), estética timbafulbo, invitaciones Resend vs código TMB
 globs: components/dashboard/create-tournament/**/*.tsx,hooks/use-media-query.ts,app/(authed)/dashboard/tournament-actions.ts,lib/create-tournament-schema.ts,lib/invite-code.ts,lib/mailer.ts
 alwaysApply: false
 ---
 
-# Timba Mundial — Crear torneo (UI + convenciones)
+# timbafulbo — Crear torneo (UI + convenciones)
 
 ## Ubicación del código
 

@@ -1,4 +1,4 @@
-# Timba Mundial
+# timbafulbo
 
 Next.js app with Prisma + PostgreSQL.
 
@@ -49,7 +49,7 @@ This project is configured to avoid accidental remote migrations.
 Set `DATABASE_URL` in `.env` to your local PostgreSQL:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/timba_mundial?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/timbafulbo?schema=public"
 ```
 
 Start from the template:
@@ -321,7 +321,7 @@ Add these to **Production** (and **Preview** if you want previews to talk to Sup
 | Variable | Value |
 | --- | --- |
 | `DATABASE_URL` | Supabase **Transaction Pooler** URL (port 6543, `pgbouncer=true&sslmode=require`). |
-| `BETTER_AUTH_URL` | Public origin, no trailing slash, e.g. `https://timba-mundial.vercel.app` or your custom domain. |
+| `BETTER_AUTH_URL` | Public origin, no trailing slash, e.g. `https://timbafulbo.vercel.app` or your custom domain. |
 | `BETTER_AUTH_SECRET` | Fresh value, do not reuse local. Generate with `openssl rand -base64 32`. |
 | `GOOGLE_CLIENT_ID` | Google Cloud OAuth client ID. |
 | `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client secret. |
@@ -331,7 +331,7 @@ Add these to **Production** (and **Preview** if you want previews to talk to Sup
 | Variable | When to set |
 | --- | --- |
 | `RESEND_API_KEY` | When you want email invites enabled. Without it, invite emails are skipped (rows still created; share code/link manually). |
-| `INVITE_FROM_EMAIL` | Together with `RESEND_API_KEY`. Defaults to `Timba Mundial <onboarding@resend.dev>` for UI display. |
+| `INVITE_FROM_EMAIL` | Together with `RESEND_API_KEY`. Defaults to `timbafulbo <onboarding@resend.dev>` for UI display. |
 | `APP_BASE_URL` | Only if it needs to differ from `BETTER_AUTH_URL`. Falls back to `BETTER_AUTH_URL` automatically. |
 
 Do NOT put these in Vercel:

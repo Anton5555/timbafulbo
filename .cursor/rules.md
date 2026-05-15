@@ -110,7 +110,7 @@ Stack:
   - minimal
   - mobile-friendly
 
-- **Timba visual system (scoreboard aesthetic, home/dashboard layouts, OKLCH semantic tokens, Spanish copy):** see [`.cursor/rules/timba-ui-layout.mdc`](.cursor/rules/timba-ui-layout.mdc) — Cursor applies it when editing files under `app/` and `components/`.
+- **timbafulbo visual system (scoreboard aesthetic, home/dashboard layouts, OKLCH semantic tokens, Spanish copy):** see [`.cursor/rules/timba-ui-layout.mdc`](.cursor/rules/timba-ui-layout.mdc) — Cursor applies it when editing files under `app/` and `components/`.
 
 ---
 

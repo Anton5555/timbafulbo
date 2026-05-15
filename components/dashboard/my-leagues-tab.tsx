@@ -113,8 +113,8 @@ function LeagueCard({
 
   async function handleDrawerNativeShare() {
     const url = getInviteUrl()
-    const title = `Timba Mundial · ${league.name}`
-    const text = `Entrá al torneo «${league.name}» en Timba Mundial.`
+    const title = `timbafulbo · ${league.name}`
+    const text = `Entrá al torneo «${league.name}» en timbafulbo.`
 
     if (typeof navigator.share !== "function") {
       const ok = await copyInviteUrl()

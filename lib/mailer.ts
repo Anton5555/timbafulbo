@@ -32,7 +32,7 @@ export async function sendInvitationEmail(opts: {
 <html lang="es">
   <head><meta charset="utf-8" /></head>
   <body style="font-family:monospace,ui-monospace,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding:24px;line-height:1.5;">
-    <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;">Timba Mundial</p>
+    <p style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;">timbafulbo</p>
     <h1 style="font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:-0.02em;color:#fbbf24;margin:12px 0 8px;">
       Invitación a la liga
     </h1>
@@ -58,7 +58,7 @@ export async function sendInvitationEmail(opts: {
   const { error } = await resend.emails.send({
     from: env.INVITE_FROM_EMAIL,
     to,
-    subject: `Invitación · ${tournamentName} · Timba Mundial`,
+    subject: `Invitación · ${tournamentName} · timbafulbo`,
     html,
   })
 

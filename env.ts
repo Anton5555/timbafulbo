@@ -17,13 +17,13 @@ export const env = createEnv({
      */
     RESEND_API_KEY: z.string().min(1).optional(),
     /**
-     * Verified Resend sender, e.g. `Timba Mundial <invites@domain.com>`.
+     * Verified Resend sender, e.g. `timbafulbo <invites@domain.com>`.
      * Defaults to the Resend sandbox label so the UI always has something to show.
      */
     INVITE_FROM_EMAIL: z
       .string()
       .min(1)
-      .default("Timba Mundial <onboarding@resend.dev>"),
+      .default("timbafulbo <onboarding@resend.dev>"),
     /** Absolute base URL for email links (fallback: BETTER_AUTH_URL). */
     APP_BASE_URL: z.url(),
   },

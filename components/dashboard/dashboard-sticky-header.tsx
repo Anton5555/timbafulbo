@@ -142,14 +142,9 @@ export function DashboardStickyHeader({
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:gap-4 sm:px-6 lg:px-8">
         <Link
           href="/dashboard"
-          className="flex min-w-0 shrink-0 flex-col leading-none"
+          className="min-w-0 shrink-0 text-base font-black tracking-tighter uppercase italic text-primary sm:text-lg"
         >
-          <span className="text-[9px] font-bold tracking-[0.25em] text-muted-foreground uppercase sm:text-[10px]">
-            Timba
-          </span>
-          <span className="text-base font-black tracking-tighter uppercase italic text-primary sm:text-lg">
-            Mundial
-          </span>
+          timbafulbo
         </Link>
 
         {/* DropdownMenu before Suspense so useId order stays stable when searchParams branch differs SSR/client. flex-row-reverse → nav, then menu. */}

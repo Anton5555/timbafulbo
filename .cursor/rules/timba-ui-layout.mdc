@@ -1,10 +1,10 @@
 ---
-description: Estética scoreboard, layouts (home/dashboard), tokens OKLCH y copys en español para Timba Mundial
+description: Estética scoreboard, layouts (home/dashboard), tokens OKLCH y copys en español para timbafulbo
 globs: app/**/*.tsx,app/**/*.css,components/**/*.tsx
 alwaysApply: false
 ---
 
-# Timba Mundial — UI, layout y decisiones de diseño
+# timbafulbo — UI, layout y decisiones de diseño
 
 ## Idioma
 
