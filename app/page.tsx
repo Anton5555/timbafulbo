@@ -67,8 +67,13 @@ export default async function Page() {
             <div className="bg-primary px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-primary-foreground uppercase">
               Mundial 2026
             </div>
-            <h1 className="text-5xl font-black tracking-tighter uppercase italic text-primary sm:text-7xl">
-              timbafulbo
+            <h1 className="flex flex-col leading-none">
+              <span className="text-sm font-bold tracking-[0.25em] text-muted-foreground uppercase sm:text-base">
+                timba
+              </span>
+              <span className="text-5xl font-black tracking-tighter uppercase italic text-primary sm:text-7xl">
+                fulbo
+              </span>
             </h1>
             <p className="max-w-[40ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
               La plataforma definitiva para gestionar tus prodes. Creá ligas,
