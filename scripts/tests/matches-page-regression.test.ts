@@ -26,6 +26,12 @@ assert.match(
   "matches page should default to pending matches"
 )
 
+assert.doesNotMatch(
+  matchFilterSource,
+  /"all"/,
+  "matches page should not expose an all filter while predictions can be scoped to all leagues"
+)
+
 assert.match(
   matchesTabShellSource,
   /filter === "pending"[\s\S]*?m\.isFinal === false/,
@@ -36,6 +42,30 @@ assert.doesNotMatch(
   matchesTabShellSource,
   /filter === "pending"[\s\S]*?userPrediction === null/,
   "pending matches should not disappear after a user adds a prediction",
+)
+
+assert.doesNotMatch(
+  matchesTabShellSource,
+  /\["all", "Todos"\]/,
+  "matches page filter buttons should not include Todos"
+)
+
+assert.doesNotMatch(
+  matchesTabShellSource,
+  /Próximos partidos/,
+  "matches toolbar title should not imply the finished tab is still upcoming"
+)
+
+assert.match(
+  matchesTabShellSource,
+  /Tus pronósticos/,
+  "matches toolbar should use a title that covers pending and finished predictions"
+)
+
+assert.match(
+  matchesTabShellSource,
+  /Tus pronósticos[\s\S]*?\["pending", "Pendientes"\][\s\S]*?\["finished", "Finalizados"\][\s\S]*?Cambiá el resultado/,
+  "filter buttons should live in the top toolbar before the autosave hint"
 )
 
 assert.doesNotMatch(

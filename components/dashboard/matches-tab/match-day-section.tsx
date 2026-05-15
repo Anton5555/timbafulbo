@@ -15,6 +15,7 @@ export function MatchDaySection({
   referenceTimeMs,
   tournamentId,
   predictionsEnabled,
+  applyToAllTournaments,
 }: {
   groupKey: string
   headingLabel: string
@@ -22,6 +23,7 @@ export function MatchDaySection({
   referenceTimeMs: number
   tournamentId: string
   predictionsEnabled: boolean
+  applyToAllTournaments: boolean
 }) {
   const matchCountLabel =
     matches.length === 1 ? "1 partido" : `${matches.length} partidos`
@@ -62,6 +64,7 @@ export function MatchDaySection({
               tournamentId={tournamentId}
               referenceTimeMs={referenceTimeMs}
               predictionsEnabled={predictionsEnabled}
+              applyToAllTournaments={applyToAllTournaments}
             />
           ))}
         </div>

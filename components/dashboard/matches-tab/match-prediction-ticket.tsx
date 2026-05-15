@@ -225,11 +225,13 @@ export function MatchPredictionTicket({
   tournamentId,
   referenceTimeMs,
   predictionsEnabled,
+  applyToAllTournaments,
 }: {
   match: MatchesTabMatch
   tournamentId: string
   referenceTimeMs: number
   predictionsEnabled: boolean
+  applyToAllTournaments: boolean
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -324,6 +326,7 @@ export function MatchPredictionTicket({
       homeScore: nextHome,
       awayScore: nextAway,
       penaltyWinner: eff,
+      applyToAllTournaments,
     })
 
     if (myGen !== saveGeneration.current) return
@@ -401,6 +404,7 @@ export function MatchPredictionTicket({
     matchId: "",
     open: false,
     touched: match.userPrediction !== null,
+    applyToAllTournaments,
   })
 
   useLayoutEffect(() => {
@@ -413,6 +417,7 @@ export function MatchPredictionTicket({
       matchId: match.id,
       open: match.predictionOpen,
       touched: isTouchedRef.current,
+      applyToAllTournaments,
     }
   }, [
     away,
@@ -422,6 +427,7 @@ export function MatchPredictionTicket({
     match.predictionOpen,
     match.stage,
     tournamentId,
+    applyToAllTournaments,
   ])
 
   const predictionsEnabledRef = useRef(predictionsEnabled)
@@ -459,9 +465,10 @@ export function MatchPredictionTicket({
         homeScore: L.home,
         awayScore: L.away,
         penaltyWinner: eff,
+        applyToAllTournaments: L.applyToAllTournaments,
       })
     }
-  }, [match.id, tournamentId])
+  }, [match.id, tournamentId, applyToAllTournaments])
 
   const start = new Date(match.startTime)
   const isLive = !match.isFinal && start.getTime() <= referenceTimeMs

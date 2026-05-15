@@ -6,6 +6,7 @@ import { z } from "zod"
 import { PenaltyWinnerSide } from "@/generated/prisma/client"
 import { auth } from "@/lib/auth"
 import { isKnockoutStage } from "@/lib/knockout-stage"
+import { getTournamentsForUser } from "@/lib/dashboard-data"
 import { prisma } from "@/lib/prisma"
 import { canEditPrediction } from "@/lib/prediction-window"
 import { userHasTournamentAccess } from "@/lib/tournament-access"
@@ -18,6 +19,7 @@ const upsertSchema = z.object({
   homeScore: scoreSchema,
   awayScore: scoreSchema,
   penaltyWinner: z.nativeEnum(PenaltyWinnerSide).nullable().optional(),
+  applyToAllTournaments: z.boolean().optional(),
 })
 
 export type UpsertPredictionResult =
@@ -38,6 +40,7 @@ export async function upsertPrediction(
   }
 
   const { tournamentId, matchId, homeScore, awayScore } = parsed.data
+  const applyToAllTournaments = parsed.data.applyToAllTournaments ?? false
   const penaltyWinnerRaw = parsed.data.penaltyWinner
   const penaltyWinnerInput =
     penaltyWinnerRaw === undefined ? null : penaltyWinnerRaw
@@ -73,7 +76,6 @@ export async function upsertPrediction(
   }
 
   const ko = isKnockoutStage(match.stage)
-  const draw = homeScore === awayScore
 
   if (!ko && penaltyWinnerInput !== null) {
     return {
@@ -81,13 +83,13 @@ export async function upsertPrediction(
       error: "El ganador por penales solo aplica en fase eliminatoria.",
     }
   }
-  if (ko && !draw && penaltyWinnerInput !== null) {
+  if (ko && homeScore !== awayScore && penaltyWinnerInput !== null) {
     return {
       ok: false,
       error: "Si no hay empate en el marcador, no corresponde ganador por penales.",
     }
   }
-  if (ko && draw && penaltyWinnerInput === null) {
+  if (ko && homeScore === awayScore && penaltyWinnerInput === null) {
     return {
       ok: false,
       error:
@@ -95,30 +97,83 @@ export async function upsertPrediction(
     }
   }
 
+  const createUpdate = {
+    homeScore,
+    awayScore,
+    penaltyWinner: penaltyWinnerInput,
+  } as const
+
+  let targetTournamentIds: string[]
+  if (applyToAllTournaments) {
+    const rows = await getTournamentsForUser(userId)
+    targetTournamentIds = rows.map((r) => r.id)
+  } else {
+    targetTournamentIds = [tournamentId]
+  }
+
+  if (targetTournamentIds.length === 0) {
+    return { ok: false, error: "No tenés ligas para guardar." }
+  }
+
+  const primaryIndex = targetTournamentIds.indexOf(tournamentId)
+  if (primaryIndex < 0) {
+    return { ok: false, error: "No tenés acceso a este torneo." }
+  }
+
   try {
-    const row = await prisma.prediction.upsert({
-      where: {
-        userId_matchId_tournamentId: {
+    if (targetTournamentIds.length === 1) {
+      const row = await prisma.prediction.upsert({
+        where: {
+          userId_matchId_tournamentId: {
+            userId,
+            matchId,
+            tournamentId: targetTournamentIds[0]!,
+          },
+        },
+        create: {
           userId,
           matchId,
-          tournamentId,
+          tournamentId: targetTournamentIds[0]!,
+          ...createUpdate,
         },
-      },
-      create: {
-        userId,
-        matchId,
-        tournamentId,
-        homeScore,
-        awayScore,
-        penaltyWinner: penaltyWinnerInput,
-      },
-      update: {
-        homeScore,
-        awayScore,
-        penaltyWinner: penaltyWinnerInput,
-      },
-      select: { homeScore: true, awayScore: true, penaltyWinner: true },
-    })
+        update: { ...createUpdate },
+        select: { homeScore: true, awayScore: true, penaltyWinner: true },
+      })
+      return {
+        ok: true,
+        homeScore: row.homeScore,
+        awayScore: row.awayScore,
+        penaltyWinner: row.penaltyWinner,
+      }
+    }
+
+    const results = await prisma.$transaction(
+      targetTournamentIds.map((tid) =>
+        prisma.prediction.upsert({
+          where: {
+            userId_matchId_tournamentId: {
+              userId,
+              matchId,
+              tournamentId: tid,
+            },
+          },
+          create: {
+            userId,
+            matchId,
+            tournamentId: tid,
+            ...createUpdate,
+          },
+          update: { ...createUpdate },
+          select: {
+            homeScore: true,
+            awayScore: true,
+            penaltyWinner: true,
+          },
+        }),
+      ),
+    )
+
+    const row = results[primaryIndex]!
     return {
       ok: true,
       homeScore: row.homeScore,

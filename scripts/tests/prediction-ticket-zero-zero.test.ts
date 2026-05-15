@@ -52,4 +52,16 @@ assert.match(
   "the predictions page should show one stable autosave instruction above the cards",
 )
 
+assert.match(
+  ticketSource,
+  /penaltyWinner: eff,\s*applyToAllTournaments,/,
+  "autosave should pass applyToAllTournaments to upsertPrediction",
+)
+
+assert.match(
+  ticketSource,
+  /applyToAllTournaments:\s*L\.applyToAllTournaments/,
+  "unmount flush should pass applyToAllTournaments snapshot",
+)
+
 console.log("prediction-ticket zero-zero tests passed")
