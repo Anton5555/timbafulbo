@@ -77,13 +77,16 @@ function MatchTicketTeamColumn({
   return (
     <div
       className={cn(
-        "flex flex-1 flex-col items-center justify-center py-2 transition-opacity",
+        "flex min-w-0 flex-1 flex-col items-center justify-center py-2 transition-opacity",
         paddingClass,
         dimmed && "opacity-40 grayscale-[0.45]",
       )}
     >
       <TeamEmblem name={team.name} code={team.code} size="sm" />
-      <span className="mt-2 max-w-full truncate text-center text-[10px] font-bold uppercase tracking-tighter sm:text-xs">
+      <span
+        className="mt-2 w-full min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-tighter sm:text-xs"
+        title={team.name}
+      >
         {team.name}
       </span>
     </div>
