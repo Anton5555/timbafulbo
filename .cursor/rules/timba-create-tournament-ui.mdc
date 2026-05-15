@@ -1,0 +1,43 @@
+---
+description: Formulario crear torneo (Sheet/Drawer), estética Timba, invitaciones Resend vs código TMB
+globs: components/dashboard/create-tournament/**/*.tsx,hooks/use-media-query.ts,app/(authed)/dashboard/tournament-actions.ts,lib/create-tournament-schema.ts,lib/invite-code.ts,lib/mailer.ts
+alwaysApply: false
+---
+
+# Timba Mundial — Crear torneo (UI + convenciones)
+
+## Ubicación del código
+
+- Shell responsive: [`components/dashboard/create-tournament/responsive-shell.tsx`](components/dashboard/create-tournament/responsive-shell.tsx) — **Sheet** derecha en desktop (`sm:`), **Drawer** desde abajo en mobile (`hooks/use-media-query.ts`, breakpoint alineado a Tailwind `640px`).
+- Formulario: [`components/dashboard/create-tournament/create-tournament-form.tsx`](components/dashboard/create-tournament/create-tournament-form.tsx).
+- Trigger + estado del panel: [`components/dashboard/create-tournament/create-tournament-trigger.tsx`](components/dashboard/create-tournament/create-tournament-trigger.tsx).
+- Pills de emails: [`components/dashboard/create-tournament/email-pills-input.tsx`](components/dashboard/create-tournament/email-pills-input.tsx).
+- Entradas UX: [`components/dashboard/my-leagues-tab.tsx`](components/dashboard/my-leagues-tab.tsx) (crear torneo + **unirme con código**), [`components/dashboard/matches-tab/matches-tab-shell.tsx`](components/dashboard/matches-tab/matches-tab-shell.tsx).
+- Servidor: [`app/(authed)/dashboard/tournament-actions.ts`](app/(authed)/dashboard/tournament-actions.ts); mails: [`lib/mailer.ts`](lib/mailer.ts); schema input: [`lib/create-tournament-schema.ts`](lib/create-tournament-schema.ts).
+
+## Estética (mantener coherencia)
+
+- **Idioma:** todo el copy visible en **español** (véase también [`timba-ui-layout.mdc`](timba-ui-layout.mdc)).
+- **Jerarquía:** secciones con etiqueta tipo consola **`[01] · …`**, **`[02] · …`**, **`text-primary`**, **`uppercase`**, **`tracking-[0.2em]`** / **`font-black`** según jerarquía ya usada en dashboard.
+- **Tokens:** solo semánticos (`bg-background`, `border-border`, `text-muted-foreground`, `primary`, etc.); sin hex sueltos.
+- **Bloques de reglas:** contenedor con **`border border-dashed border-border`**, **`bg-muted/10`** o **`bg-muted/20`**; separadores entre secciones con **`Separator`** + **`border-dashed`** donde aplique.
+- **Steppers numéricos:** mismo espíritu que el ticket de pronósticos (`outline`, `rounded-none`, **`tabular-nums`**, botones **`icon-xs`**).
+- **CTA principal:** botón **`w-full`**, **`h-12`** en móvil, **`rounded-none`**, **`uppercase`**, **`tracking-[0.2em]`**; loading con **`SoccerBallIcon`** en spin (patrón ya usado en partidos).
+- **Bloque “terminal”** (invitaciones por mail): **`border-l-2 border-primary`**, **`bg-muted/40`**, tipografía **`text-[10px]`**, **`tracking-widest`**, **`uppercase`**; prefijo visual **`>`** en el texto.
+- **Drawer móvil:** footer del shell con **`sticky bottom-0`**, **`bg-background/95`**, **`backdrop-blur`**, **`safe-area-inset-bottom`** cuando aplique.
+- **Toasts:** Sonner montado en [`app/(authed)/dashboard/layout.tsx`](app/(authed)/dashboard/layout.tsx); mensajes de éxito/error del flujo crear torneo en español.
+
+## Contenido UX importante
+
+- **No mostrar un código `TMB-XXXX` “de mentira”** antes de crear el torneo: el código humano lo asigna el servidor al crear y aparece en toast + **Mis ligas**. En el formulario solo explicar formato y dónde verlo después.
+- **Dos canales de invitación:** (1) email con link **`/join/<token>`** (fila `Invitation` + Resend); (2) código **`inviteCode`** del torneo — en **Mis ligas** hay formulario “Unirme con código” que llama a **`joinTournamentByInviteCode`** en [`tournament-actions.ts`](app/(authed)/dashboard/tournament-actions.ts) y crea **`Membership`** (`MEMBER`) si el código existe y el usuario aún no pertenece.
+
+## Datos y límites
+
+- Reglas del torneo: JSON validado con [`lib/tournament-rules.ts`](lib/tournament-rules.ts); UI edita campos concretos, no JSON crudo.
+- Invitados: máximo y normalización en [`lib/create-tournament-schema.ts`](lib/create-tournament-schema.ts); excluir email del owner en pills.
+
+## Referencias cruzadas
+
+- Layout general dashboard y tabs: [`timba-ui-layout.mdc`](timba-ui-layout.mdc).
+- Migraciones Prisma: [`prisma-migration-safety.mdc`](prisma-migration-safety.mdc).

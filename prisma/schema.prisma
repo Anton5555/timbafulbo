@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//
+// ENUMS
+//
+
+enum MembershipRole {
+  ADMIN
+  MEMBER
+}
+
+enum MatchStage {
+  GROUP
+  ROUND_OF_32
+  ROUND_OF_16
+  QUARTER_FINALS
+  SEMI_FINALS
+  THIRD_PLACE
+  FINAL
+}
+
+/// Penalty winner (scoreboard side) in knockout matches when regular time ends in a draw.
+enum PenaltyWinnerSide {
+  HOME
+  AWAY
+}
+
+enum BonusType {
+  CHAMPION
+  RUNNER_UP
+  TOP_SCORER
+  SURPRISE_TEAM
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+/// football-data.org v4 match `status` filter values (see API docs).
+enum FootballDataMatchStatus {
+  SCHEDULED
+  LIVE
+  IN_PLAY
+  PAUSED
+  FINISHED
+  POSTPONED
+  SUSPENDED
+  CANCELLED
+}
+
+//
+// MODELS
+//
+
+model Team {
+  id             String  @id @default(cuid())
+  footballDataId Int?    @unique
+  name           String  @unique
+  /// ISO 3166-1 alpha-3 (football-data `area.code`, e.g. URY, ARG)
+  code           String  @unique
+  crestUrl       String?
+  shortName      String?
+  areaName       String?
+
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+}
+
+model Tournament {
+  id         String   @id @default(cuid())
+  name       String
+  ownerId    String   // Better Auth userId
+  inviteCode String   @unique
+  rules      Json     // Store scoring logic (e.g., points per stage)
+  createdAt  DateTime @default(now())
+
+  memberships Membership[]
+  predictions Prediction[]
+  bonuses     BonusPrediction[]
+  invitations Invitation[]
+
+  @@index([ownerId])
+}
+
+model Invitation {
+  id           String           @id @default(cuid())
+  tournamentId String
+  email        String // normalized lowercase
+  token        String           @unique
+  status       InvitationStatus @default(PENDING)
+  invitedById  String
+  createdAt    DateTime         @default(now())
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  acceptedById String?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, email])
+  @@index([tournamentId])
+  @@index([email])
+  @@index([status])
+}
+
+model Membership {
+  id           String         @id @default(cuid())
+  userId       String         // Better Auth userId
+  tournamentId String
+  role         MembershipRole @default(MEMBER)
+  createdAt    DateTime       @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tournamentId])
+  @@index([tournamentId])
+  @@index([userId])
+}
+
+model Match {
+  id             String  @id @default(cuid())
+  footballDataId Int?    @unique
+  externalId     String? @unique
+
+  homeTeamId String
+  awayTeamId String
+  homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam   Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  startTime   DateTime
+  stage       MatchStage @default(GROUP)
+  group       String?    // "A", "B", etc.
+  /// Last known football-data `status` (metadata only; app logic uses `isFinal` + scores).
+  status            FootballDataMatchStatus?
+  matchday          Int?
+  /// football-data `lastUpdated` on the match resource.
+  lastUpdated       DateTime?
+  /// When this app last wrote match fields from the API (sync/upsert).
+  apiSyncedAt       DateTime?
+
+  homeScore Int?    // Actual result
+  awayScore Int?    // Actual result
+  /// In KO with a draw in regular time: the team that advances (per API `score.winner`).
+  penaltyWinner PenaltyWinnerSide?
+  isFinal   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  predictions Prediction[]
+
+  @@index([startTime])
+  @@index([stage])
+}
+
+model Prediction {
+  id           String @id @default(cuid())
+  userId       String // Better Auth userId
+  matchId      String
+  tournamentId String
+
+  homeScore Int
+  awayScore Int
+  /// KO only + draw in regular time: predicted penalty winner.
+  penaltyWinner PenaltyWinnerSide?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  match      Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId, tournamentId])
+  @@index([tournamentId])
+  @@index([userId])
+  @@index([matchId])
+}
+
+model BonusPrediction {
+  id           String @id @default(cuid())
+  userId       String // Better Auth userId
+  tournamentId String
+
+  type  BonusType
+  value String // ID of a Team or Name of a Player
+
+  createdAt DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tournamentId, type])
+  @@index([tournamentId])
+  @@index([userId])
+}
+
+//
+// BETTER AUTH MODELS
+//
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}

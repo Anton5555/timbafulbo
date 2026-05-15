@@ -1,0 +1,60 @@
+---
+description: Estética scoreboard, layouts (home/dashboard), tokens OKLCH y copys en español para Timba Mundial
+globs: app/**/*.tsx,app/**/*.css,components/**/*.tsx
+alwaysApply: false
+---
+
+# Timba Mundial — UI, layout y decisiones de diseño
+
+## Idioma
+
+- Toda la UI orientada al usuario debe estar en **español** (etiquetas, botones, pestañas, vacíos, errores visibles, `aria-label` cuando aplique).
+
+## Tipografía y jerarquía (“scoreboard”)
+
+- El proyecto usa **`font-mono`** en `html` ([`app/globals.css`](app/globals.css)); no mezclar una sans distinta salvo decisión explícita del equipo.
+- Para navegación, badges y metadata breve: **`uppercase`** + **`tracking-widest`** / **`tracking-[0.2em]`** sobre **`text-[10px]`–`text-xs`**.
+- Títulos de impacto: **`font-black`**, **`uppercase`**, **`tracking-tighter`**; acentos con **`text-primary`** donde corresponda.
+- Números de marcador, puntajes y ranks: **`tabular-nums`** cuando ayude al alineado tipo tabla.
+
+## Color y tokens
+
+- Preferir **solo tokens semánticos** del tema: `background`, `foreground`, `primary`, `muted`, `border`, `card`, etc. vía utilidades Tailwind (`bg-background`, `text-primary`, `border-border`, …).
+- Los valores OKLCH viven en [`app/globals.css`](app/globals.css); no introducir paletas paralelas con hex arbitrarios.
+- **Excepción documentada:** la grilla de fondo decorativa puede usar **`oklch(...)` en línea** alineada al tono del tema (como en la home y el dashboard); si se generaliza, extraer a variables CSS en `:root` en lugar de duplicar valores por página.
+
+## Layout — página pública (home)
+
+- Shell típico: **`relative flex min-h-svh flex-col`** (o **`items-center`** si va centrado), **`bg-background`**, padding **`p-6 lg:p-12`**.
+- Contenedor principal: **`max-w-6xl`**, grid **`grid-cols-1`** → **`lg:grid-cols-2`** cuando haya dos bloques (hero + aside).
+- Capa de grilla: elemento **`fixed inset-0 -z-10`** con gradientes lineales finos (patrón ya usado en [`app/page.tsx`](app/page.tsx)).
+- Bloques tipo “ticket/card”: **`border border-border`**, **`bg-card`**, **`shadow-2xl`**, separadores internos con **`border-dashed`**.
+
+## Layout — dashboard autenticado
+
+- Rutas bajo [`app/(authed)/`](app/(authed)/): el segmento **solo protege sesión**; el chrome visual del producto vive en **[`app/(authed)/dashboard/layout.tsx`](app/(authed)/dashboard/layout.tsx)**.
+- Reutilizar **grilla de fondo + `font-mono`** como la home para continuidad visual.
+- **Header sticky:** `sticky top-0 z-50`, borde inferior, fondo semitransparente + **`backdrop-blur`** (legibilidad sobre el contenido que scrollea).
+- Contenido: **`max-w-6xl mx-auto`**, padding horizontal **`px-4 sm:px-6 lg:px-8`**, espacio vertical consistente (**`gap-8`** entre bloques grandes cuando aplique).
+
+## Componentes compuestos del dashboard
+
+- Navegación principal del dashboard: **Tabs** Shadcn con etiquetas **`Partidos`**, **`Clasificaciones`**, **`Mis ligas`**; lista **scroll horizontal** en viewport angosto si hace falta (`overflow-x-auto`, triggers **`shrink-0`**).
+- Partidos: filas/cards **compactas**, **`border-border`**, **`bg-muted/30`**, hover **`bg-muted/50`**, alineado con [`components/upcoming-fixtures.tsx`](components/upcoming-fixtures.tsx).
+- Clasificaciones: **`Select`** para torneo + tabla o lista densa, headers en **uppercase** y **`tabular-nums`** en puntajes.
+- **`Button`:** mantener variantes del design system ([`components/ui/button.tsx`](components/ui/button.tsx)); CTAs importantes pueden usar **`tracking-widest uppercase`** y alturas táctiles (**`h-12`** en móvil cuando sea CTA principal).
+- **Crear torneo (Sheet/Drawer, invitaciones):** convenciones detalladas en [`.cursor/rules/timba-create-tournament-ui.mdc`](.cursor/rules/timba-create-tournament-ui.mdc).
+
+## Etiquetas de fase de partido
+
+- Centralizar labels en español de **`MatchStage`** en [`lib/match-stage-labels.ts`](lib/match-stage-labels.ts) para no duplicar mapas entre vistas.
+
+## Mobile-first
+
+- Definir primero espaciado y tipografía en base móvil; escalar con **`sm:`**, **`md:`**, **`lg:`** donde ya existe el patrón en la home y el dashboard.
+
+## Referencias rápidas en código
+
+- Home: [`app/page.tsx`](app/page.tsx).
+- Dashboard: redirect canónico en [`app/(authed)/dashboard/page.tsx`](app/(authed)/dashboard/page.tsx); vistas por tab en [`app/(authed)/dashboard/matches/page.tsx`](app/(authed)/dashboard/matches/page.tsx), [`app/(authed)/dashboard/leaderboards/page.tsx`](app/(authed)/dashboard/leaderboards/page.tsx), [`app/(authed)/dashboard/leagues/page.tsx`](app/(authed)/dashboard/leagues/page.tsx).
+- Piezas de dashboard: [`components/dashboard/`](components/dashboard/).

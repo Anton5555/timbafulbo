@@ -1,0 +1,18 @@
+---
+description: Prisma migration safety workflow for local and remote databases
+alwaysApply: true
+---
+
+# Prisma Migration Safety
+
+- Use `pnpm prisma:migrate:dev` only for local database changes.
+- Never run `prisma migrate dev` against Supabase or production.
+- Use `pnpm prisma:migrate:deploy` for remote environments only.
+- Prefer `REMOTE_DATABASE_URL` for remote deploys; keep `DATABASE_URL` local.
+- Before remote deploy, require explicit confirmation with `ALLOW_REMOTE_MIGRATION=true`.
+- Keep `DATABASE_URL` local during daily development.
+- Validate schema and regenerate client after Prisma model changes:
+  - `pnpm prisma:validate`
+  - `pnpm prisma:generate`
+
+If a migration command is requested, verify whether the target is local or remote before executing.
