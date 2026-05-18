@@ -25,6 +25,26 @@ const DEBOUNCE_MS = 2000
 const SCORE_MIN = 0
 const SCORE_MAX = 30
 
+function clampScore(n: number): number {
+  return Math.max(SCORE_MIN, Math.min(SCORE_MAX, n))
+}
+
+function isCompleteScorePair(
+  home: number | null,
+  away: number | null,
+): boolean {
+  return (
+    home !== null &&
+    away !== null &&
+    Number.isInteger(home) &&
+    Number.isInteger(away) &&
+    home >= SCORE_MIN &&
+    home <= SCORE_MAX &&
+    away >= SCORE_MIN &&
+    away <= SCORE_MAX
+  )
+}
+
 const timeFmt = new Intl.DateTimeFormat("es", {
   hour: "2-digit",
   minute: "2-digit",
@@ -157,16 +177,21 @@ function MatchTicketCenter({
 function ScoreStepper({
   value,
   isGhosted,
-  onChange,
+  onStep,
   disabled,
   label,
 }: {
-  value: number
+  value: number | null
   isGhosted: boolean
-  onChange: (n: number) => void
+  onStep: (delta: -1 | 1) => void
   disabled: boolean
   label: string
 }) {
+  const minusDisabled =
+    disabled || (value !== null && value <= SCORE_MIN)
+  const plusDisabled =
+    disabled || (value !== null && value >= SCORE_MAX)
+
   return (
     <div
       className={cn(
@@ -180,8 +205,8 @@ function ScoreStepper({
         variant="outline"
         size="icon-xs"
         className="shrink-0 rounded-none border-border"
-        disabled={disabled || value <= SCORE_MIN}
-        onClick={() => onChange(Math.max(SCORE_MIN, value - 1))}
+        disabled={minusDisabled}
+        onClick={() => onStep(-1)}
         aria-label={`Quitar uno a ${label}`}
       >
         −
@@ -192,15 +217,15 @@ function ScoreStepper({
           isGhosted ? "text-muted-foreground/60" : "text-foreground",
         )}
       >
-        {value}
+        {value === null ? "—" : value}
       </span>
       <Button
         type="button"
         variant="outline"
         size="icon-xs"
         className="shrink-0 rounded-none border-border"
-        disabled={disabled || value >= SCORE_MAX}
-        onClick={() => onChange(Math.min(SCORE_MAX, value + 1))}
+        disabled={plusDisabled}
+        onClick={() => onStep(1)}
         aria-label={`Sumar uno a ${label}`}
       >
         +
@@ -235,8 +260,12 @@ export function MatchPredictionTicket({
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [home, setHome] = useState(() => match.userPrediction?.homeScore ?? 0)
-  const [away, setAway] = useState(() => match.userPrediction?.awayScore ?? 0)
+  const [home, setHome] = useState<number | null>(
+    () => match.userPrediction?.homeScore ?? null,
+  )
+  const [away, setAway] = useState<number | null>(
+    () => match.userPrediction?.awayScore ?? null,
+  )
   const [penaltyWinner, setPenaltyWinner] = useState<
     PenaltyWinnerSide | null
   >(() => match.userPrediction?.penaltyWinner ?? null)
@@ -292,6 +321,7 @@ export function MatchPredictionTicket({
     nextPenaltyPick: PenaltyWinnerSide | null,
   ) {
     if (!predictionsEnabled) return
+    if (!isCompleteScorePair(nextHome, nextAway)) return
     const eff = effectivePenaltyForPersist(
       match.stage,
       nextHome,
@@ -352,6 +382,7 @@ export function MatchPredictionTicket({
     nextAway: number,
     nextPenaltyPick: PenaltyWinnerSide | null,
   ) {
+    if (!isCompleteScorePair(nextHome, nextAway)) return
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
     debounceTimer.current = setTimeout(() => {
       debounceTimer.current = null
@@ -359,8 +390,35 @@ export function MatchPredictionTicket({
     }, DEBOUNCE_MS)
   }
 
-  function onScoresChange(nextHome: number, nextAway: number) {
+  function applyScoreStep(side: "home" | "away", delta: -1 | 1) {
     markTouched()
+
+    let nextHome = home
+    let nextAway = away
+
+    if (nextHome === null && nextAway === null) {
+      nextHome = 0
+      nextAway = 0
+      if (side === "home") {
+        nextHome = clampScore(nextHome + delta)
+      } else {
+        nextAway = clampScore(nextAway + delta)
+      }
+    } else if (nextHome !== null && nextAway !== null) {
+      if (side === "home") {
+        nextHome = clampScore(nextHome + delta)
+      } else {
+        nextAway = clampScore(nextAway + delta)
+      }
+    } else {
+      return
+    }
+
+    commitScoresChange(nextHome, nextAway)
+  }
+
+  function commitScoresChange(nextHome: number, nextAway: number) {
+    if (!isCompleteScorePair(nextHome, nextAway)) return
 
     const koDraw = isKnockoutStage(match.stage) && nextHome === nextAway
     const pickForSchedule = koDraw ? penaltyWinner : null
@@ -387,6 +445,8 @@ export function MatchPredictionTicket({
   function onPenaltyPick(side: PenaltyWinnerSide) {
     markTouched()
 
+    if (home === null || away === null) return
+
     setPenaltyWinner(side)
     if (!match.predictionOpen) return
     const eff = effectivePenaltyForPersist(match.stage, home, away, side)
@@ -396,8 +456,8 @@ export function MatchPredictionTicket({
   }
 
   const latestFlush = useRef({
-    home: 0,
-    away: 0,
+    home: null as number | null,
+    away: null as number | null,
     penaltyWinner: null as PenaltyWinnerSide | null,
     stage: match.stage,
     tournamentId: "",
@@ -444,26 +504,31 @@ export function MatchPredictionTicket({
       }
       const L = latestFlush.current
       if (!L.open) return
+      if (L.home === null || L.away === null) return
+      const flushHome = L.home
+      const flushAway = L.away
       const eff = effectivePenaltyForPersist(
         L.stage,
-        L.home,
-        L.away,
+        flushHome,
+        flushAway,
         L.penaltyWinner,
       )
-      if (isKnockoutStage(L.stage) && L.home === L.away && eff === null) {
+      if (isKnockoutStage(L.stage) && flushHome === flushAway && eff === null) {
         return
       }
       const b = lastPersisted.current
       const dirty =
         b === null
           ? L.touched
-          : b.home !== L.home || b.away !== L.away || b.penalty !== eff
+          : b.home !== flushHome ||
+            b.away !== flushAway ||
+            b.penalty !== eff
       if (!dirty) return
       void upsertPrediction({
         tournamentId: L.tournamentId,
         matchId: L.matchId,
-        homeScore: L.home,
-        awayScore: L.away,
+        homeScore: flushHome,
+        awayScore: flushAway,
         penaltyWinner: eff,
         applyToAllTournaments: L.applyToAllTournaments,
       })
@@ -503,8 +568,12 @@ export function MatchPredictionTicket({
   const liquidationResult = match.userPredictionResult
 
   const saving = saveState === "saving" || isPending
+  const scoresComplete = isCompleteScorePair(home, away)
   const showPenaltyPick =
-    isKnockoutStage(match.stage) && home === away && match.predictionOpen
+    scoresComplete &&
+    isKnockoutStage(match.stage) &&
+    home === away &&
+    match.predictionOpen
   const showIncompletePenaltyPick =
     showPenaltyPick && isTouched && penaltyWinner === null
 
@@ -567,7 +636,7 @@ export function MatchPredictionTicket({
                   isGhosted={!isTouched}
                   disabled={saving}
                   label="goles local"
-                  onChange={(n) => onScoresChange(n, away)}
+                  onStep={(delta) => applyScoreStep("home", delta)}
                 />
                 <span className="font-black text-muted-foreground">—</span>
                 <ScoreStepper
@@ -575,7 +644,7 @@ export function MatchPredictionTicket({
                   isGhosted={!isTouched}
                   disabled={saving}
                   label="goles visitante"
-                  onChange={(n) => onScoresChange(home, n)}
+                  onStep={(delta) => applyScoreStep("away", delta)}
                 />
               </div>
               {showPenaltyPick ? (

@@ -40,6 +40,54 @@ assert.match(
   "untouched first-time prediction scores should render as a ghost state",
 )
 
+assert.match(
+  ticketSource,
+  /match\.userPrediction\?\.homeScore \?\? null/,
+  "first-time predictions should initialize home score as null",
+)
+
+assert.match(
+  ticketSource,
+  /match\.userPrediction\?\.awayScore \?\? null/,
+  "first-time predictions should initialize away score as null",
+)
+
+assert.match(
+  ticketSource,
+  /value === null \? "—" : value/,
+  "unset prediction scores should render as an em dash",
+)
+
+assert.match(
+  ticketSource,
+  /function applyScoreStep\(side: "home" \| "away", delta: -1 \| 1\)/,
+  "score steppers should apply deltas with first-click 0-0 initialization",
+)
+
+assert.match(
+  ticketSource,
+  /if \(nextHome === null && nextAway === null\) \{[\s\S]*?nextHome = 0[\s\S]*?nextAway = 0/,
+  "first score button click should initialize both sides to 0-0",
+)
+
+assert.match(
+  ticketSource,
+  /function isCompleteScorePair\(/,
+  "autosave should require a complete score pair before persisting",
+)
+
+assert.match(
+  ticketSource,
+  /if \(!isCompleteScorePair\(nextHome, nextAway\)\) return/,
+  "persist path should skip partial score pairs",
+)
+
+assert.match(
+  ticketSource,
+  /if \(L\.home === null \|\| L\.away === null\) return/,
+  "unmount flush should skip partial score pairs",
+)
+
 assert.doesNotMatch(
   ticketSource,
   /Tocá para pronosticar|Cambiá el resultado y se guarda solo, incluso si queda 0-0\./,
@@ -48,7 +96,7 @@ assert.doesNotMatch(
 
 assert.match(
   matchesTabShellSource,
-  /Cambiá el resultado y se guarda solo, incluso si queda 0-0\./,
+  /Cambiá el resultado y se guarda solo, incluso si querés guardar 0-0\./,
   "the predictions page should show one stable autosave instruction above the cards",
 )
 
