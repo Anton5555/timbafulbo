@@ -26,6 +26,10 @@ import {
 import { Accordion } from "@/components/ui/accordion"
 import { MatchDaySection } from "./match-day-section"
 import type { MatchesTabMatch } from "./types"
+import {
+  matchStatusPollingResetKey,
+  useMatchStatusPolling,
+} from "./use-match-status-polling"
 
 function filterMatches(
   matches: MatchesTabMatch[],
@@ -37,18 +41,76 @@ function filterMatches(
   return matches.filter((m) => m.isFinal)
 }
 
+function MatchesTabMatchList({
+  matches,
+  activeFilter,
+  predictionsEnabled,
+  tournamentId,
+  applyToAllTournaments,
+}: {
+  matches: MatchesTabMatch[]
+  activeFilter: "pending" | "finished"
+  predictionsEnabled: boolean
+  tournamentId: string
+  applyToAllTournaments: boolean
+}) {
+  const { displayMatches, referenceTimeMs } = useMatchStatusPolling({
+    matches,
+    tournamentId,
+    predictionsEnabled,
+  })
+
+  const filtered = predictionsEnabled
+    ? filterMatches(displayMatches, activeFilter)
+    : displayMatches
+  const grouped =
+    predictionsEnabled && activeFilter === "finished"
+      ? groupMatchesByStage(filtered)
+      : groupMatchesByLocalDay(filtered)
+  const defaultOpenGroups = grouped.map((g) => g.key)
+
+  if (filtered.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border bg-muted/10 px-4 py-12 text-center">
+        <p className="text-sm font-medium text-muted-foreground">
+          No hay partidos en esta vista.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <Accordion
+      type="multiple"
+      defaultValue={defaultOpenGroups}
+      className="flex flex-col gap-3"
+    >
+      {grouped.map(({ key, label, matches: groupMatches }) => (
+        <MatchDaySection
+          key={key}
+          groupKey={key}
+          headingLabel={label}
+          matches={groupMatches}
+          referenceTimeMs={referenceTimeMs}
+          tournamentId={tournamentId}
+          predictionsEnabled={predictionsEnabled}
+          applyToAllTournaments={applyToAllTournaments}
+        />
+      ))}
+    </Accordion>
+  )
+}
+
 export function MatchesTabShell({
   predictionsEnabled,
   tournaments,
   matches,
-  referenceTimeMs,
   currentUserEmail,
   inviteFromEmail,
 }: {
   predictionsEnabled: boolean
   tournaments: { id: string; name: string }[]
   matches: MatchesTabMatch[]
-  referenceTimeMs: number
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
@@ -68,14 +130,6 @@ export function MatchesTabShell({
   const [applyToAllTournaments, setApplyToAllTournaments] = useState(true)
 
   const activeFilter = matchFilter ?? "pending"
-  const filtered = predictionsEnabled
-    ? filterMatches(matches, activeFilter)
-    : matches
-  const grouped =
-    predictionsEnabled && activeFilter === "finished"
-      ? groupMatchesByStage(filtered)
-      : groupMatchesByLocalDay(filtered)
-  const defaultOpenGroups = grouped.map((g) => g.key)
   const canBulkSave =
     predictionsEnabled && activeFilter === "pending" && tournaments.length > 1
   const effectiveApplyToAllTournaments = canBulkSave && applyToAllTournaments
@@ -84,6 +138,7 @@ export function MatchesTabShell({
 
   const total = matches.length
   const completed = matches.filter((m) => m.userPrediction !== null).length
+  const pollingKey = matchStatusPollingResetKey(matches)
 
   return (
     <div className="space-y-6">
@@ -241,32 +296,14 @@ export function MatchesTabShell({
         </div>
       ) : null}
 
-      {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-muted/10 px-4 py-12 text-center">
-          <p className="text-sm font-medium text-muted-foreground">
-            No hay partidos en esta vista.
-          </p>
-        </div>
-      ) : (
-        <Accordion
-          type="multiple"
-          defaultValue={defaultOpenGroups}
-          className="flex flex-col gap-3"
-        >
-          {grouped.map(({ key, label, matches: groupMatches }) => (
-            <MatchDaySection
-              key={key}
-              groupKey={key}
-              headingLabel={label}
-              matches={groupMatches}
-              referenceTimeMs={referenceTimeMs}
-              tournamentId={tournamentId ?? ""}
-              predictionsEnabled={predictionsEnabled}
-              applyToAllTournaments={effectiveApplyToAllTournaments}
-            />
-          ))}
-        </Accordion>
-      )}
+      <MatchesTabMatchList
+        key={pollingKey}
+        matches={matches}
+        activeFilter={activeFilter}
+        predictionsEnabled={predictionsEnabled}
+        tournamentId={tournamentId ?? ""}
+        applyToAllTournaments={effectiveApplyToAllTournaments}
+      />
     </div>
   )
 }

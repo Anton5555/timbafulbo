@@ -16,9 +16,6 @@ export function MatchesTab({
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
-  // eslint-disable-next-line react-hooks/purity -- instante de render del RSC
-  const referenceTimeMs = Date.now()
-
   if (matches.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/10 px-4 py-16 text-center">
@@ -34,7 +31,6 @@ export function MatchesTab({
       predictionsEnabled={predictionsEnabled}
       tournaments={tournaments}
       matches={matches}
-      referenceTimeMs={referenceTimeMs}
       currentUserEmail={currentUserEmail}
       inviteFromEmail={inviteFromEmail}
     />
