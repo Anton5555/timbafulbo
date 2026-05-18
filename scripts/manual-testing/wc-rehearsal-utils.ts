@@ -177,6 +177,95 @@ export function seededNumber(seed: number): number {
   return Math.abs(x)
 }
 
+function seededTextNumber(text: string): number {
+  let hash = 0
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 31 + text.charCodeAt(i)) | 0
+  }
+  return seededNumber(hash)
+}
+
+type WeightedScoreline = {
+  homeScore: number
+  awayScore: number
+  weight: number
+}
+
+const REALISTIC_REHEARSAL_SCORELINES: WeightedScoreline[] = [
+  { homeScore: 0, awayScore: 0, weight: 10 },
+  { homeScore: 1, awayScore: 0, weight: 14 },
+  { homeScore: 0, awayScore: 1, weight: 11 },
+  { homeScore: 1, awayScore: 1, weight: 13 },
+  { homeScore: 2, awayScore: 0, weight: 8 },
+  { homeScore: 0, awayScore: 2, weight: 6 },
+  { homeScore: 2, awayScore: 1, weight: 12 },
+  { homeScore: 1, awayScore: 2, weight: 10 },
+  { homeScore: 2, awayScore: 2, weight: 5 },
+  { homeScore: 3, awayScore: 0, weight: 3 },
+  { homeScore: 0, awayScore: 3, weight: 2 },
+  { homeScore: 3, awayScore: 1, weight: 4 },
+  { homeScore: 1, awayScore: 3, weight: 3 },
+  { homeScore: 3, awayScore: 2, weight: 1 },
+  { homeScore: 2, awayScore: 3, weight: 1 },
+  { homeScore: 4, awayScore: 0, weight: 1 },
+  { homeScore: 0, awayScore: 4, weight: 1 },
+  { homeScore: 4, awayScore: 1, weight: 1 },
+  { homeScore: 1, awayScore: 4, weight: 1 },
+  { homeScore: 4, awayScore: 2, weight: 1 },
+  { homeScore: 2, awayScore: 4, weight: 1 },
+  { homeScore: 4, awayScore: 3, weight: 1 },
+  { homeScore: 3, awayScore: 4, weight: 1 },
+]
+
+const REALISTIC_REHEARSAL_SCORELINE_WEIGHT_TOTAL =
+  REALISTIC_REHEARSAL_SCORELINES.reduce(
+    (total, scoreline) => total + scoreline.weight,
+    0,
+  )
+
+export function buildSimulatedRehearsalOutcome(
+  match: {
+    id: string
+    footballDataId: number | null
+    stage: MatchStage
+  },
+  globalSeed: number,
+): {
+  homeScore: number
+  awayScore: number
+  penaltyWinner: PenaltyWinnerSide | null
+} {
+  const matchSeed =
+    match.footballDataId ??
+    seededTextNumber(`${match.stage}:${match.id}`)
+  const baseSeed = matchSeed + globalSeed
+  let roll =
+    seededNumber(baseSeed + 37) % REALISTIC_REHEARSAL_SCORELINE_WEIGHT_TOTAL
+  let selected = REALISTIC_REHEARSAL_SCORELINES[0]
+
+  for (const scoreline of REALISTIC_REHEARSAL_SCORELINES) {
+    if (roll < scoreline.weight) {
+      selected = scoreline
+      break
+    }
+    roll -= scoreline.weight
+  }
+
+  const isDraw = selected.homeScore === selected.awayScore
+  const penaltyWinner =
+    match.stage !== "GROUP" && isDraw
+      ? seededNumber(baseSeed + 101) % 2 === 0
+        ? "HOME"
+        : "AWAY"
+      : null
+
+  return {
+    homeScore: selected.homeScore,
+    awayScore: selected.awayScore,
+    penaltyWinner,
+  }
+}
+
 /** Deterministic shuffle (Fisher–Yates with seededNumber). */
 export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
   const arr = [...items]

@@ -2,54 +2,20 @@ import "dotenv/config"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 
-import type {
-  Match,
-  PenaltyWinnerSide,
-} from "../../generated/prisma/client"
 import {
   FootballDataMatchStatus,
   PrismaClient,
 } from "../../generated/prisma/client"
-import { isKnockoutStage } from "../../lib/knockout-stage"
 import {
+  buildSimulatedRehearsalOutcome,
   canWriteToDatabase,
   getNumberArg,
   hasManualRehearsalRowsInStage,
   manualAwareStageWhere,
   parseMatchStageFromArg,
-  seededNumber,
 } from "./wc-rehearsal-utils"
 
 const DEFAULT_BATCH_SIZE = 8
-
-function buildSimulatedOutcome(
-  match: Pick<Match, "id" | "footballDataId" | "stage">,
-  globalSeed: number,
-): {
-  homeScore: number
-  awayScore: number
-  penaltyWinner: PenaltyWinnerSide | null
-} {
-  const baseSeed =
-    (match.footballDataId ?? seededNumber(match.id.length)) + globalSeed
-  const scoreA = seededNumber(baseSeed + 11) % 5
-  const scoreB = seededNumber(baseSeed + 23) % 5
-
-  if (!isKnockoutStage(match.stage) || scoreA !== scoreB) {
-    return {
-      homeScore: scoreA,
-      awayScore: scoreB,
-      penaltyWinner: null,
-    }
-  }
-
-  return {
-    homeScore: scoreA,
-    awayScore: scoreB,
-    penaltyWinner:
-      seededNumber(baseSeed + 101) % 2 === 0 ? "HOME" : "AWAY",
-  }
-}
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL?.trim()
@@ -100,7 +66,7 @@ async function main() {
 
     const now = new Date()
     const updates = pending.map((match) => {
-      const outcome = buildSimulatedOutcome(match, seed)
+      const outcome = buildSimulatedRehearsalOutcome(match, seed)
       return prisma.match.update({
         where: { id: match.id },
         data: {
@@ -121,7 +87,7 @@ async function main() {
       `[wc-rehearsal] Finalized matches: ${pending.length} (seed=${seed}, stage=${stage ?? "ANY"}, requested=${hasCount ? String(batchSize) : "ALL_FOR_FILTER"})`,
     )
     for (const match of pending) {
-      const outcome = buildSimulatedOutcome(match, seed)
+      const outcome = buildSimulatedRehearsalOutcome(match, seed)
       const pens =
         outcome.penaltyWinner === null ? "" : ` (pens: ${outcome.penaltyWinner})`
       console.log(
