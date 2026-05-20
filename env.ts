@@ -28,7 +28,10 @@ export const env = createEnv({
     APP_BASE_URL: z.url(),
   },
 
-  client: {},
+  client: {
+    NEXT_PUBLIC_SUPABASE_URL: z.url(),
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
+  },
 
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -38,7 +41,9 @@ export const env = createEnv({
     FOOTBALL_DATA_API_TOKEN: process.env.FOOTBALL_DATA_API_TOKEN,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     INVITE_FROM_EMAIL: process.env.INVITE_FROM_EMAIL,
-    APP_BASE_URL:
-      process.env.APP_BASE_URL ?? process.env.BETTER_AUTH_URL,
+    APP_BASE_URL: process.env.APP_BASE_URL ?? process.env.BETTER_AUTH_URL,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   },
 })

@@ -84,12 +84,29 @@ model Tournament {
   rules      Json     // Store scoring logic (e.g., points per stage)
   createdAt  DateTime @default(now())
 
-  memberships Membership[]
-  predictions Prediction[]
-  bonuses     BonusPrediction[]
-  invitations Invitation[]
+  memberships  Membership[]
+  predictions  Prediction[]
+  bonuses      BonusPrediction[]
+  invitations  Invitation[]
+  chatMessages TournamentChatMessage[]
 
   @@index([ownerId])
+}
+
+model TournamentChatMessage {
+  id           String    @id @default(cuid())
+  tournamentId String
+  userId       String
+  body         String
+  createdAt    DateTime  @default(now())
+  editedAt     DateTime?
+  deletedAt    DateTime?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, createdAt])
+  @@index([userId])
 }
 
 model Invitation {
@@ -215,6 +232,7 @@ model User {
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  chatMessages  TournamentChatMessage[]
 
   @@unique([email])
   @@map("user")

@@ -8,9 +8,8 @@ import {
 import { DashboardPageHero } from "@/components/dashboard/dashboard-page-hero"
 import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
 import { LeaderboardsTab } from "@/components/dashboard/leaderboards-tab"
-import {
-  getLeaderboardForTournament,
-} from "@/lib/dashboard-data"
+import { getLeaderboardForTournament } from "@/lib/dashboard-data"
+import { getTournamentChatMessagesForUser } from "@/lib/tournament-chat-data"
 
 export const dynamic = "force-dynamic"
 
@@ -23,12 +22,17 @@ export default async function DashboardLeaderboardsPage({
   const sp = await searchParams
   const tournaments = await loadUserTournaments(userId)
 
-  redirectToDefaultTournamentIfInvalid({
+  const tournamentId = redirectToDefaultTournamentIfInvalid({
     tab: "leaderboards",
     tournaments,
     requestedTournamentId: sp.tournament,
     preserveMatchFilter: sp.matchFilter,
   })
+
+  const initialChatMessages =
+    tournaments.length > 0 && tournamentId
+      ? ((await getTournamentChatMessagesForUser(userId, tournamentId)) ?? [])
+      : []
 
   const leaderboardEntries = await Promise.all(
     tournaments.map(async (t) => {
@@ -54,6 +58,7 @@ export default async function DashboardLeaderboardsPage({
           <LeaderboardsTab
             tournaments={tournaments}
             leaderboardsByTournamentId={leaderboardsByTournamentId}
+            initialChatMessages={initialChatMessages}
           />
         </DashboardTabs>
       </Suspense>

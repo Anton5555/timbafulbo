@@ -325,6 +325,8 @@ Add these to **Production** (and **Preview** if you want previews to talk to Sup
 | `BETTER_AUTH_SECRET` | Fresh value, do not reuse local. Generate with `openssl rand -base64 32`. |
 | `GOOGLE_CLIENT_ID` | Google Cloud OAuth client ID. |
 | `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client secret. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (Dashboard → Project Settings → API). Required for tournament chat Realtime. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase **Publishable key** (Dashboard → API Keys → Publishable key). Do not use the legacy anon key. |
 
 **Optional (only set when you actually need them):**
 
@@ -391,6 +393,21 @@ The first time you point at Supabase, do this manually before the auto-migrate w
 - `git push origin main` → Vercel rebuilds the app, GitHub Actions runs `prisma migrate deploy` against Supabase (gated by your reviewer rule).
 - The WC sync workflow ticks every 5 minutes against Supabase using the Session Pooler URL.
 - You keep running `pnpm prisma:migrate:dev` only against your local DB; remote deploys never touch the dev path.
+
+### Tournament chat (Supabase Realtime)
+
+Per-tournament chat appears on **Clasificaciones** and **Mis ligas** (not on Partidos). Live updates use Supabase Realtime; messages are read and written via Better Auth server actions.
+
+**Local `.env`:**
+
+```env
+NEXT_PUBLIC_SUPABASE_URL="https://<project-ref>.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="<supabase-publishable-key>"
+```
+
+Copy the **Publishable key** from Supabase Dashboard → **API Keys** (tab “Publishable and secret API keys”). The legacy anon key is not used.
+
+After the first deploy, enable Realtime for `"TournamentChatMessage"` and run the SQL in [docs/SUPABASE_REALTIME.md](docs/SUPABASE_REALTIME.md).
 
 ## Why these scripts are safe
 
