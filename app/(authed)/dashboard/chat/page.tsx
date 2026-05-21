@@ -7,11 +7,12 @@ import {
 } from "@/app/(authed)/dashboard/_lib/dashboard-page-context"
 import { DashboardPageHero } from "@/components/dashboard/dashboard-page-hero"
 import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
-import { LeaderboardsTab } from "@/components/dashboard/leaderboards-tab"
-import { getLeaderboardForTournament } from "@/lib/dashboard-data"
+import { TournamentChatView } from "@/components/dashboard/tournament-chat/tournament-chat-view"
+import { getTournamentChatMessagesForUser } from "@/lib/tournament-chat-data"
+
 export const dynamic = "force-dynamic"
 
-export default async function DashboardLeaderboardsPage({
+export default async function DashboardChatPage({
   searchParams,
 }: {
   searchParams: Promise<{ tournament?: string; matchFilter?: string }>
@@ -20,21 +21,17 @@ export default async function DashboardLeaderboardsPage({
   const sp = await searchParams
   const tournaments = await loadUserTournaments(userId)
 
-  redirectToDefaultTournamentIfInvalid({
-    tab: "leaderboards",
+  const tournamentId = redirectToDefaultTournamentIfInvalid({
+    tab: "chat",
     tournaments,
     requestedTournamentId: sp.tournament,
     preserveMatchFilter: sp.matchFilter,
   })
 
-  const leaderboardEntries = await Promise.all(
-    tournaments.map(async (t) => {
-      const rows = await getLeaderboardForTournament(t.id)
-      return [t.id, rows] as const
-    })
-  )
-
-  const leaderboardsByTournamentId = Object.fromEntries(leaderboardEntries)
+  const initialChatMessages =
+    tournaments.length > 0 && tournamentId
+      ? ((await getTournamentChatMessagesForUser(userId, tournamentId)) ?? [])
+      : []
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,9 +45,10 @@ export default async function DashboardLeaderboardsPage({
         }
       >
         <DashboardTabs>
-          <LeaderboardsTab
+          <TournamentChatView
             tournaments={tournaments}
-            leaderboardsByTournamentId={leaderboardsByTournamentId}
+            initialMessages={initialChatMessages}
+            panelClassName="min-h-[min(70vh,32rem)]"
           />
         </DashboardTabs>
       </Suspense>

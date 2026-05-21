@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { deleteTournamentChatMessage } from "@/app/(authed)/dashboard/chat/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { shouldShowChatMessageHeader } from "@/lib/tournament-chat-grouping"
 import type { TournamentChatMessageRow } from "@/lib/tournament-chat-data"
 import { cn } from "@/lib/utils"
 
@@ -53,14 +54,18 @@ export function TournamentChatMessageList({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-3">
-      {messages.map((message) => (
-        <ChatMessageRow
-          key={message.id}
-          message={message}
-          onDeleted={onDeleted}
-        />
-      ))}
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3">
+      {messages.map((message, index) => {
+        const showHeader = shouldShowChatMessageHeader(messages, index)
+        return (
+          <ChatMessageRow
+            key={message.id}
+            message={message}
+            showHeader={showHeader}
+            onDeleted={onDeleted}
+          />
+        )
+      })}
       <div ref={bottomRef} aria-hidden className="h-px shrink-0" />
     </div>
   )
@@ -68,9 +73,11 @@ export function TournamentChatMessageList({
 
 function ChatMessageRow({
   message,
+  showHeader,
   onDeleted,
 }: {
   message: TournamentChatMessageRow
+  showHeader: boolean
   onDeleted: (messageId: string) => void
 }) {
   async function handleDelete() {
@@ -86,45 +93,53 @@ function ChatMessageRow({
     <article
       className={cn(
         "flex gap-2.5",
+        showHeader ? "mt-3 first:mt-0" : "mt-1",
         message.isOwn ? "flex-row-reverse text-right" : "flex-row text-left"
       )}
     >
-      <Avatar size="sm" className="size-8 shrink-0 border border-border">
-        {message.userImage ? (
-          <AvatarImage src={message.userImage} alt={message.userName} />
-        ) : null}
-        <AvatarFallback className="text-[10px] font-bold uppercase">
-          {initialsFromName(message.userName)}
-        </AvatarFallback>
-      </Avatar>
+      {showHeader ? (
+        <Avatar size="sm" className="size-8 shrink-0 border border-border">
+          {message.userImage ? (
+            <AvatarImage src={message.userImage} alt={message.userName} />
+          ) : null}
+          <AvatarFallback className="text-[10px] font-bold uppercase">
+            {initialsFromName(message.userName)}
+          </AvatarFallback>
+        </Avatar>
+      ) : (
+        <div className="size-8 shrink-0" aria-hidden />
+      )}
       <div
         className={cn(
           "min-w-0 max-w-[85%] space-y-1",
           message.isOwn ? "items-end" : "items-start"
         )}
       >
-        <div
-          className={cn(
-            "flex flex-wrap items-baseline gap-x-2 gap-y-0.5",
-            message.isOwn && "justify-end"
-          )}
-        >
-          <span className="text-[10px] font-bold tracking-wide text-foreground uppercase">
-            {message.isOwn ? "Vos" : message.userName}
-          </span>
-          <time
-            dateTime={message.createdAt}
-            className="text-[10px] text-muted-foreground tabular-nums"
+        {showHeader ? (
+          <div
+            className={cn(
+              "flex flex-wrap items-baseline gap-x-2 gap-y-0.5",
+              message.isOwn && "justify-end"
+            )}
           >
-            {formatMessageTime(message.createdAt)}
-          </time>
-        </div>
+            <span className="text-[10px] font-bold tracking-wide text-foreground uppercase">
+              {message.isOwn ? "Vos" : message.userName}
+            </span>
+            <time
+              dateTime={message.createdAt}
+              className="text-[10px] text-muted-foreground tabular-nums"
+            >
+              {formatMessageTime(message.createdAt)}
+            </time>
+          </div>
+        ) : null}
         <p
           className={cn(
             "wrap-break-word border border-border px-2.5 py-2 text-xs leading-relaxed",
             message.isOwn
               ? "bg-primary/10 text-foreground"
-              : "bg-muted/30 text-foreground"
+              : "bg-muted/30 text-foreground",
+            !showHeader && "mt-0"
           )}
         >
           {message.body}

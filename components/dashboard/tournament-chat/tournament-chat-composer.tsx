@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { sendTournamentChatMessage } from "@/app/(authed)/dashboard/chat/actions"
 import { Button } from "@/components/ui/button"
+import { useIsDesktopSm } from "@/hooks/use-media-query"
 import { TOURNAMENT_CHAT_MAX_BODY_LENGTH } from "@/lib/tournament-chat-validation"
 import type { TournamentChatMessageRow } from "@/lib/tournament-chat-data"
 import { cn } from "@/lib/utils"
@@ -21,10 +22,10 @@ export function TournamentChatComposer({
 }) {
   const [body, setBody] = useState("")
   const [busy, setBusy] = useState(false)
+  const isDesktop = useIsDesktopSm()
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (busy || disabled) return
+  async function submitMessage() {
+    if (busy || disabled || body.trim().length === 0) return
 
     setBusy(true)
     const res = await sendTournamentChatMessage({ tournamentId, body })
@@ -37,6 +38,18 @@ export function TournamentChatComposer({
 
     setBody("")
     onSent(res.message)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    await submitMessage()
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      void submitMessage()
+    }
   }
 
   return (
@@ -56,6 +69,7 @@ export function TournamentChatComposer({
         disabled={busy || disabled}
         placeholder="Escribí un mensaje…"
         onChange={(e) => setBody(e.target.value)}
+        onKeyDown={handleKeyDown}
         className={cn(
           "min-h-[4.5rem] w-full resize-none rounded-none border border-input bg-background px-2.5 py-2 text-xs outline-none",
           "placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50",
@@ -73,7 +87,7 @@ export function TournamentChatComposer({
           className="rounded-none font-black tracking-[0.15em] uppercase"
         >
           <PaperPlaneRightIcon className="size-4" weight="duotone" aria-hidden />
-          {busy ? "Enviando…" : "Enviar"}
+          {busy ? "Enviando…" : isDesktop ? "Enviar ↵" : "Enviar"}
         </Button>
       </div>
     </form>

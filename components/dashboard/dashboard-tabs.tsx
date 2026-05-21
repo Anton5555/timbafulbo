@@ -91,6 +91,22 @@ export function DashboardTabs({ children }: { children: React.ReactNode }) {
         >
           Mis ligas
         </Link>
+        <Link
+          role="tab"
+          href={hrefFor("chat")}
+          className={cn(
+            tabTriggerClass,
+            "relative inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-foreground/60 transition-all hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring sm:hidden",
+            "bg-transparent after:absolute after:bg-foreground after:opacity-0 after:transition-opacity after:inset-x-0 after:-bottom-2 after:h-0.5",
+            pathname === DASHBOARD_SECTION_PATH.chat &&
+              "text-foreground after:opacity-100"
+          )}
+          aria-current={
+            pathname === DASHBOARD_SECTION_PATH.chat ? "page" : undefined
+          }
+        >
+          Chat
+        </Link>
       </nav>
 
       <div className="mt-0 text-sm">{children}</div>

@@ -2,9 +2,11 @@ import type { ReactNode } from "react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { DashboardLayoutShell } from "@/components/dashboard/dashboard-layout-shell"
 import { DashboardStickyHeader } from "@/components/dashboard/dashboard-sticky-header"
 import { Toaster } from "@/components/ui/sonner"
 import { auth } from "@/lib/auth"
+import { getTournamentsForUser } from "@/lib/dashboard-data"
 
 export default async function DashboardLayout({
   children,
@@ -18,6 +20,8 @@ export default async function DashboardLayout({
   if (!session) {
     redirect("/")
   }
+
+  const tournaments = await getTournamentsForUser(session.user.id)
 
   return (
     <div className="relative flex min-h-svh flex-col bg-background font-mono">
@@ -34,8 +38,10 @@ export default async function DashboardLayout({
         }}
       />
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-8">
-        {children}
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 pb-12 pt-6 sm:px-6 sm:pb-24 lg:px-8">
+        <DashboardLayoutShell tournaments={tournaments} initialChatMessages={[]}>
+          {children}
+        </DashboardLayoutShell>
       </div>
       <Toaster richColors position="top-center" />
     </div>

@@ -7,22 +7,13 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react"
 import { useRouter } from "next/navigation"
-import { useQueryState } from "nuqs"
-import {
-  useEffect,
-  useOptimistic,
-  useState,
-  useTransition,
-} from "react"
+import { useOptimistic, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { getTournamentChatMessages } from "@/app/(authed)/dashboard/chat/actions"
 import {
   deleteTournament,
   joinTournamentByInviteCode,
 } from "@/app/(authed)/dashboard/tournament-actions"
-import { TournamentChatPanel } from "@/components/dashboard/tournament-chat/tournament-chat-panel"
-import { dashboardTournamentParser } from "@/components/dashboard/tournament-search-params"
 import { CreateTournamentTrigger } from "@/components/dashboard/create-tournament/create-tournament-trigger"
 import {
   Drawer,
@@ -48,8 +39,6 @@ import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
 import { buildTournamentInvitePath } from "@/lib/invite-url"
 
 import type { MyTournamentRow } from "@/lib/dashboard-data"
-import type { TournamentChatMessageRow } from "@/lib/tournament-chat-data"
-import { cn } from "@/lib/utils"
 
 function roleLabel(role: MyTournamentRow["role"]): string {
   switch (role) {
@@ -65,14 +54,10 @@ function roleLabel(role: MyTournamentRow["role"]): string {
 function LeagueCard({
   league,
   deletePending,
-  isActive,
-  onSelect,
   onDeleteConfirmed,
 }: {
   league: MyTournamentRow
   deletePending: boolean
-  isActive: boolean
-  onSelect: () => void
   onDeleteConfirmed: () => void
 }) {
   const isDesktop = useIsDesktopSm()
@@ -169,24 +154,7 @@ function LeagueCard({
   }
 
   return (
-    <Card
-      size="sm"
-      className={cn(
-        "cursor-pointer border-border bg-card transition-colors",
-        isActive && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-      )}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onSelect()
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      aria-pressed={isActive}
-      aria-label={`Seleccionar liga ${league.name}`}
-    >
+    <Card size="sm" className="border-border bg-card">
       <CardHeader className="border-b border-dashed border-border pb-3">
         <CardTitle className="text-xs font-black tracking-tight uppercase">
           {league.name}
@@ -212,10 +180,7 @@ function LeagueCard({
               variant="default"
               size="sm"
               className="w-full rounded-none font-black tracking-[0.15em] uppercase"
-              onClick={(e) => {
-                e.stopPropagation()
-                void handleSharePrimaryClick()
-              }}
+              onClick={() => void handleSharePrimaryClick()}
               aria-label={
                 copied
                   ? "Link copiado"
@@ -296,10 +261,7 @@ function LeagueCard({
                     size="sm"
                     disabled={deletePending}
                     className="rounded-none font-black tracking-[0.15em] uppercase"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setConfirming(false)
-                    }}
+                    onClick={() => setConfirming(false)}
                   >
                     Cancelar
                   </Button>
@@ -309,10 +271,7 @@ function LeagueCard({
                     size="sm"
                     disabled={deletePending}
                     className="rounded-none font-black tracking-[0.15em] uppercase"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      void onConfirmDelete()
-                    }}
+                    onClick={() => void onConfirmDelete()}
                   >
                     {deletePending ? "Eliminando…" : "Eliminar definitivamente"}
                   </Button>
@@ -324,10 +283,7 @@ function LeagueCard({
                 variant="destructive"
                 size="sm"
                 className="w-full rounded-none font-black tracking-[0.15em] uppercase"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setConfirming(true)
-                }}
+                onClick={() => setConfirming(true)}
                 aria-label={`Eliminar torneo ${league.name}`}
               >
                 <TrashIcon className="size-4" weight="duotone" aria-hidden />
@@ -422,28 +378,14 @@ function JoinLeagueByCodeBlock() {
 
 export function MyLeaguesTab({
   leagues,
-  tournaments,
-  initialChatMessages,
   currentUserEmail,
   inviteFromEmail,
 }: {
   leagues: MyTournamentRow[]
-  tournaments: { id: string; name: string }[]
-  initialChatMessages: TournamentChatMessageRow[]
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
   const router = useRouter()
-  const [tournamentId, setTournamentId] = useQueryState(
-    "tournament",
-    dashboardTournamentParser.withOptions({
-      shallow: false,
-      history: "replace",
-    })
-  )
-  const [chatMessages, setChatMessages] =
-    useState<TournamentChatMessageRow[]>(initialChatMessages)
-  const [chatLoading, setChatLoading] = useState(false)
   const [deletePending, startDeleteTransition] = useTransition()
   const [optimisticLeagues, removeLeagueOptimistic] = useOptimistic(
     leagues,
@@ -464,27 +406,6 @@ export function MyLeaguesTab({
   }
 
   const listEmpty = optimisticLeagues.length === 0
-  const activeTournament = tournaments.find((t) => t.id === tournamentId)
-
-  useEffect(() => {
-    if (!tournamentId) return
-
-    let cancelled = false
-
-    void (async () => {
-      setChatLoading(true)
-      const res = await getTournamentChatMessages(tournamentId)
-      if (cancelled) return
-      setChatLoading(false)
-      if (res.ok) {
-        setChatMessages(res.messages)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [tournamentId])
 
   return (
     <div className="space-y-6">
@@ -533,32 +454,15 @@ export function MyLeaguesTab({
           </CreateTournamentTrigger>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-            {optimisticLeagues.map((league) => (
-              <LeagueCard
-                key={league.id}
-                league={league}
-                isActive={tournamentId === league.id}
-                onSelect={() => {
-                  void setTournamentId(league.id)
-                }}
-                deletePending={deletePending}
-                onDeleteConfirmed={() => handleDeleteLeague(league.id)}
-              />
-            ))}
-          </div>
-
-          {activeTournament && tournamentId ? (
-            <TournamentChatPanel
-              key={tournamentId}
-              tournamentId={tournamentId}
-              tournamentName={activeTournament.name}
-              messages={chatMessages}
-              onMessagesChange={setChatMessages}
-              className={chatLoading ? "opacity-60" : undefined}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          {optimisticLeagues.map((league) => (
+            <LeagueCard
+              key={league.id}
+              league={league}
+              deletePending={deletePending}
+              onDeleteConfirmed={() => handleDeleteLeague(league.id)}
             />
-          ) : null}
+          ))}
         </div>
       )}
     </div>

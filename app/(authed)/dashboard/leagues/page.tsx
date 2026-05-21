@@ -10,8 +10,6 @@ import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
 import { MyLeaguesTab } from "@/components/dashboard/my-leagues-tab"
 import { env } from "@/env"
 import { getMyTournaments } from "@/lib/dashboard-data"
-import { getTournamentChatMessagesForUser } from "@/lib/tournament-chat-data"
-
 export const dynamic = "force-dynamic"
 
 export default async function DashboardLeaguesPage({
@@ -23,7 +21,7 @@ export default async function DashboardLeaguesPage({
   const sp = await searchParams
   const tournaments = await loadUserTournaments(userId)
 
-  const tournamentId = redirectToDefaultTournamentIfInvalid({
+  redirectToDefaultTournamentIfInvalid({
     tab: "leagues",
     tournaments,
     requestedTournamentId: sp.tournament,
@@ -31,11 +29,6 @@ export default async function DashboardLeaguesPage({
   })
 
   const myLeagues = await getMyTournaments(userId)
-
-  const initialChatMessages =
-    tournaments.length > 0 && tournamentId
-      ? ((await getTournamentChatMessagesForUser(userId, tournamentId)) ?? [])
-      : []
 
   return (
     <div className="flex flex-col gap-8">
@@ -51,8 +44,6 @@ export default async function DashboardLeaguesPage({
         <DashboardTabs>
           <MyLeaguesTab
             leagues={myLeagues}
-            tournaments={tournaments}
-            initialChatMessages={initialChatMessages}
             currentUserEmail={userEmail}
             inviteFromEmail={env.INVITE_FROM_EMAIL}
           />
