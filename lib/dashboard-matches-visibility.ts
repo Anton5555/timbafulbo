@@ -38,6 +38,14 @@ export function selectCurrentPredictionStage<
   return null
 }
 
+/** FINAL and THIRD_PLACE are predicted together in the same phase window. */
+export function stagesInPredictionBucket(stage: MatchStage): MatchStage[] {
+  if (stage === "FINAL" || stage === "THIRD_PLACE") {
+    return ["FINAL", "THIRD_PLACE"]
+  }
+  return [stage]
+}
+
 /**
  * For prediction-enabled dashboard: keep finalized matches available for the results view,
  * plus the current stage with real teams. When no prediction window is open anywhere,
@@ -57,7 +65,8 @@ export function filterMatchesForPredictionView<
   if (stage === null) {
     return definedOnly
   }
-  return definedOnly.filter((m) => m.isFinal || m.stage === stage)
+  const bucket = stagesInPredictionBucket(stage)
+  return definedOnly.filter((m) => m.isFinal || bucket.includes(m.stage))
 }
 
 /** Read-only fixture: hide unknown sides, keep all stages with real teams. */

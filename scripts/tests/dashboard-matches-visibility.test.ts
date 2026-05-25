@@ -176,4 +176,38 @@ assert.equal(
   "QUARTER_FINALS",
 )
 
+// --- FINAL + THIRD_PLACE: both visible when either window is open ---
+
+const semiFinalized = mk("sf1", "SEMI_FINALS", atOffsetMs(nowDuringGroup, -60), {
+  isFinal: true,
+  homeCode: "MEX",
+  awayCode: "BEL",
+})
+const finalOpen = mk("fin", "FINAL", atOffsetMs(nowDuringGroup, 180), {
+  homeCode: "ARG",
+  awayCode: "BRA",
+})
+const thirdPlaceOpen = mk("tp", "THIRD_PLACE", atOffsetMs(nowDuringGroup, 181), {
+  homeCode: "MEX",
+  awayCode: "BEL",
+})
+
+const finaleFixture = [semiFinalized, finalOpen, thirdPlaceOpen]
+
+assert.equal(
+  selectCurrentPredictionStage(finaleFixture, nowDuringGroup),
+  "FINAL",
+  "earliest editable match in fixture order is FINAL",
+)
+
+const filteredFinale = filterMatchesForPredictionView(
+  finaleFixture,
+  nowDuringGroup,
+)
+assert.deepEqual(
+  filteredFinale.map((m) => m.id).sort(),
+  ["fin", "sf1", "tp"].sort(),
+  "FINAL and THIRD_PLACE must both appear while predictions are open",
+)
+
 console.log("dashboard-matches-visibility tests passed")
