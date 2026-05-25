@@ -31,7 +31,7 @@ export function MatchDaySection({
   return (
     <AccordionItem
       value={groupKey}
-      className="overflow-hidden border border-border bg-card/50 not-last:border-b-0"
+      className="border border-border bg-card/50 not-last:border-b-0"
     >
       <AccordionTrigger
         className={cn(
@@ -56,7 +56,7 @@ export function MatchDaySection({
       </AccordionTrigger>
 
       <AccordionContent className="border-t border-border/60 bg-background/40 pb-4 pt-4">
-        <div className="grid grid-cols-1 gap-3 px-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-3 px-3 lg:grid-cols-2">
           {matches.map((match) => (
             <MatchPredictionTicket
               key={`${tournamentId}-${match.id}-${match.userPrediction?.homeScore ?? "x"}-${match.userPrediction?.awayScore ?? "x"}-${match.userPrediction?.penaltyWinner ?? "p"}-${match.predictionOpen}-${match.userPredictionResult?.kind ?? "n"}-${match.userPredictionResult?.points ?? "n"}`}

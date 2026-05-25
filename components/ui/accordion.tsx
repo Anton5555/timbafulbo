@@ -60,15 +60,38 @@ function AccordionContent({
   children,
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Content>) {
+  const contentRef = React.useRef<HTMLDivElement>(null)
+  const innerRef = React.useRef<HTMLDivElement>(null)
+
+  React.useLayoutEffect(() => {
+    const inner = innerRef.current
+    const content = contentRef.current
+    if (!inner || !content) return
+
+    const syncHeight = () => {
+      content.style.setProperty(
+        "--radix-accordion-content-height",
+        `${inner.scrollHeight}px`,
+      )
+    }
+
+    syncHeight()
+    const observer = new ResizeObserver(syncHeight)
+    observer.observe(inner)
+    return () => observer.disconnect()
+  }, [children])
+
   return (
     <AccordionPrimitive.Content
+      ref={contentRef}
       data-slot="accordion-content"
       className="overflow-hidden text-xs data-open:animate-accordion-down data-closed:animate-accordion-up"
       {...props}
     >
       <div
+        ref={innerRef}
         className={cn(
-          "h-(--radix-accordion-content-height) pt-0 pb-2.5 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
+          "pt-0 pb-2.5 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
           className
         )}
       >
