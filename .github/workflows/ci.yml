@@ -28,6 +28,8 @@ jobs:
     env:
       APP_BASE_URL: http://localhost:3000
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/timbafulbo
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-publishable-key
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
