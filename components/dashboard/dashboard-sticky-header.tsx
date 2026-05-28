@@ -43,9 +43,11 @@ function initialsFromUser(user: DashboardStickyHeaderUser): string {
 
 function DashboardPrimaryNav({
   leaderboardsActive,
+  reglasActive,
   tournamentId,
 }: {
   leaderboardsActive: boolean
+  reglasActive: boolean
   tournamentId: string | null
 }) {
   const leaderboardsHref =
@@ -90,8 +92,14 @@ function DashboardPrimaryNav({
         asChild
       >
         <Link
-          href="/#reglas"
-          className="inline-flex h-7 items-center justify-start gap-1.5 py-0 text-[10px] leading-none text-muted-foreground sm:text-xs [&>svg]:block"
+          href="/reglas"
+          aria-current={reglasActive ? "page" : undefined}
+          className={cn(
+            "inline-flex h-7 items-center justify-start gap-1.5 py-0 text-[10px] leading-none sm:text-xs [&>svg]:block",
+            reglasActive
+              ? "text-foreground"
+              : "text-foreground/90 hover:text-foreground"
+          )}
         >
           <BookBookmarkIcon
             className="size-4 shrink-0 self-center"
@@ -109,10 +117,12 @@ function DashboardPrimaryNavWithSearchParams() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const leaderboardsActive = pathname === DASHBOARD_SECTION_PATH.leaderboards
+  const reglasActive = pathname === "/reglas"
   const tournamentId = searchParams.get("tournament")
   return (
     <DashboardPrimaryNav
       leaderboardsActive={leaderboardsActive}
+      reglasActive={reglasActive}
       tournamentId={tournamentId}
     />
   )
@@ -215,6 +225,7 @@ export function DashboardStickyHeader({
             fallback={
               <DashboardPrimaryNav
                 leaderboardsActive={false}
+                reglasActive={false}
                 tournamentId={null}
               />
             }
