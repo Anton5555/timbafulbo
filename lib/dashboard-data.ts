@@ -18,6 +18,8 @@ import { parseRules } from "@/lib/tournament-rules"
 import { canEditPrediction } from "@/lib/prediction-window"
 import { userHasTournamentAccess } from "@/lib/tournament-access"
 import { displayTeamNameEs } from "@/lib/team-display-name"
+import { pickWinnersFromLeaderboard } from "@/lib/tournament-winner"
+import { isWorldCupComplete } from "@/lib/wc-status"
 
 export type DashboardMatchTeam = {
   name: string
@@ -42,6 +44,11 @@ export type LeaderboardRow = {
   userId: string
   displayName: string
   points: number
+}
+
+export type TournamentWinner = {
+  isComplete: boolean
+  winners: LeaderboardRow[]
 }
 
 export type MyTournamentRow = {
@@ -378,4 +385,20 @@ export async function getLeaderboardForTournament(
   })
 
   return rows
+}
+
+export async function getTournamentWinner(
+  tournamentId: string
+): Promise<TournamentWinner> {
+  const isComplete = await isWorldCupComplete()
+  if (!isComplete) {
+    return { isComplete: false, winners: [] }
+  }
+
+  const rows = await getLeaderboardForTournament(tournamentId)
+
+  return {
+    isComplete: true,
+    winners: pickWinnersFromLeaderboard(rows),
+  }
 }

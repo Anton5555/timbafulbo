@@ -8,7 +8,10 @@ import {
 import { DashboardPageHero } from "@/components/dashboard/dashboard-page-hero"
 import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
 import { LeaderboardsTab } from "@/components/dashboard/leaderboards-tab"
-import { getLeaderboardForTournament } from "@/lib/dashboard-data"
+import {
+  getLeaderboardForTournament,
+  getTournamentWinner,
+} from "@/lib/dashboard-data"
 export const dynamic = "force-dynamic"
 
 export default async function DashboardLeaderboardsPage({
@@ -27,14 +30,22 @@ export default async function DashboardLeaderboardsPage({
     preserveMatchFilter: sp.matchFilter,
   })
 
-  const leaderboardEntries = await Promise.all(
+  const tournamentDataEntries = await Promise.all(
     tournaments.map(async (t) => {
-      const rows = await getLeaderboardForTournament(t.id)
-      return [t.id, rows] as const
+      const [rows, winner] = await Promise.all([
+        getLeaderboardForTournament(t.id),
+        getTournamentWinner(t.id),
+      ])
+      return [t.id, { rows, winner }] as const
     })
   )
 
-  const leaderboardsByTournamentId = Object.fromEntries(leaderboardEntries)
+  const leaderboardsByTournamentId = Object.fromEntries(
+    tournamentDataEntries.map(([id, data]) => [id, data.rows])
+  )
+  const winnerByTournamentId = Object.fromEntries(
+    tournamentDataEntries.map(([id, data]) => [id, data.winner])
+  )
 
   return (
     <div className="flex flex-col gap-8">
@@ -51,6 +62,7 @@ export default async function DashboardLeaderboardsPage({
           <LeaderboardsTab
             tournaments={tournaments}
             leaderboardsByTournamentId={leaderboardsByTournamentId}
+            winnerByTournamentId={winnerByTournamentId}
           />
         </DashboardTabs>
       </Suspense>

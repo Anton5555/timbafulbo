@@ -5,6 +5,7 @@ import {
   PlusCircleIcon,
   ShareNetworkIcon,
   TrashIcon,
+  TrophyIcon,
 } from "@phosphor-icons/react"
 import { useRouter } from "next/navigation"
 import { useOptimistic, useState, useTransition } from "react"
@@ -38,7 +39,18 @@ import { useIsDesktopSm } from "@/hooks/use-media-query"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
 import { buildTournamentInvitePath } from "@/lib/invite-url"
 
-import type { MyTournamentRow } from "@/lib/dashboard-data"
+import type { MyTournamentRow, TournamentWinner } from "@/lib/dashboard-data"
+
+function formatLeagueWinnerBadge(winner: TournamentWinner): string | null {
+  if (!winner.isComplete || winner.winners.length === 0) return null
+
+  if (winner.winners.length === 1) {
+    return `Finalizado — Ganador: ${winner.winners[0].displayName}`
+  }
+
+  const names = winner.winners.map((w) => w.displayName).join(", ")
+  return `Finalizado — Empate: ${names}`
+}
 
 function roleLabel(role: MyTournamentRow["role"]): string {
   switch (role) {
@@ -53,10 +65,12 @@ function roleLabel(role: MyTournamentRow["role"]): string {
 
 function LeagueCard({
   league,
+  winner,
   deletePending,
   onDeleteConfirmed,
 }: {
   league: MyTournamentRow
+  winner: TournamentWinner
   deletePending: boolean
   onDeleteConfirmed: () => void
 }) {
@@ -153,6 +167,8 @@ function LeagueCard({
     onDeleteConfirmed()
   }
 
+  const winnerBadgeText = formatLeagueWinnerBadge(winner)
+
   return (
     <Card size="sm" className="border-border bg-card">
       <CardHeader className="border-b border-dashed border-border pb-3">
@@ -162,6 +178,18 @@ function LeagueCard({
         <CardDescription className="text-[10px] font-bold tracking-widest uppercase">
           {roleLabel(league.role)}
         </CardDescription>
+        {winnerBadgeText ? (
+          <div className="mt-2 flex items-start gap-2 border border-primary/30 bg-primary/10 px-2 py-1.5">
+            <TrophyIcon
+              className="mt-0.5 size-3.5 shrink-0 text-primary"
+              weight="duotone"
+              aria-hidden
+            />
+            <p className="text-[10px] font-bold leading-snug tracking-wide text-primary uppercase">
+              {winnerBadgeText}
+            </p>
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent className="pt-3">
         <div className="flex flex-col gap-1">
@@ -378,10 +406,12 @@ function JoinLeagueByCodeBlock() {
 
 export function MyLeaguesTab({
   leagues,
+  winnerByTournamentId,
   currentUserEmail,
   inviteFromEmail,
 }: {
   leagues: MyTournamentRow[]
+  winnerByTournamentId: Record<string, TournamentWinner>
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
@@ -459,6 +489,12 @@ export function MyLeaguesTab({
             <LeagueCard
               key={league.id}
               league={league}
+              winner={
+                winnerByTournamentId[league.id] ?? {
+                  isComplete: false,
+                  winners: [],
+                }
+              }
               deletePending={deletePending}
               onDeleteConfirmed={() => handleDeleteLeague(league.id)}
             />

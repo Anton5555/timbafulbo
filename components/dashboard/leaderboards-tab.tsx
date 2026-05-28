@@ -1,5 +1,6 @@
 "use client"
 
+import { TrophyIcon } from "@phosphor-icons/react"
 import { useQueryState } from "nuqs"
 
 import { dashboardTournamentParser } from "@/components/dashboard/tournament-search-params"
@@ -10,14 +11,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { LeaderboardRow } from "@/lib/dashboard-data"
+import type { LeaderboardRow, TournamentWinner } from "@/lib/dashboard-data"
+
+function formatWinnerBanner(winners: LeaderboardRow[]): string | null {
+  if (winners.length === 0) return null
+
+  const points = winners[0].points
+  const names = winners.map((w) => w.displayName).join(", ")
+
+  if (winners.length === 1) {
+    return `Ganador: ${names} — ${points} pts`
+  }
+
+  return `Ganadores empatados: ${names} — ${points} pts`
+}
 
 export function LeaderboardsTab({
   tournaments,
   leaderboardsByTournamentId,
+  winnerByTournamentId,
 }: {
   tournaments: { id: string; name: string }[]
   leaderboardsByTournamentId: Record<string, LeaderboardRow[]>
+  winnerByTournamentId: Record<string, TournamentWinner>
 }) {
   const [tournamentId, setTournamentId] = useQueryState(
     "tournament",
@@ -30,6 +46,19 @@ export function LeaderboardsTab({
   const rows = tournamentId
     ? (leaderboardsByTournamentId[tournamentId] ?? [])
     : []
+
+  const winnerData = tournamentId
+    ? (winnerByTournamentId[tournamentId] ?? { isComplete: false, winners: [] })
+    : { isComplete: false, winners: [] }
+
+  const winnerBannerText =
+    winnerData.isComplete && winnerData.winners.length > 0
+      ? formatWinnerBanner(winnerData.winners)
+      : null
+
+  const winnerUserIds = new Set(
+    winnerData.winners.map((w) => w.userId)
+  )
 
   if (tournaments.length === 0) {
     return (
@@ -67,6 +96,22 @@ export function LeaderboardsTab({
         </Select>
       </div>
 
+      {winnerBannerText ? (
+        <div
+          className="flex items-start gap-3 border border-primary/40 bg-primary/10 px-4 py-3"
+          role="status"
+        >
+          <TrophyIcon
+            className="mt-0.5 size-5 shrink-0 text-primary"
+            weight="duotone"
+            aria-hidden
+          />
+          <p className="text-xs font-black tracking-wide uppercase">
+            {winnerBannerText}
+          </p>
+        </div>
+      ) : null}
+
       {rows.length === 0 ? (
         <div className="border border-border bg-muted/10 px-4 py-8 text-center">
           <p className="text-sm text-muted-foreground">
@@ -94,7 +139,11 @@ export function LeaderboardsTab({
               {rows.map((row, index) => (
                 <tr
                   key={row.userId}
-                  className="border-b border-border/80 odd:bg-muted/15 hover:bg-muted/35"
+                  className={
+                    winnerData.isComplete && winnerUserIds.has(row.userId)
+                      ? "border-b border-border/80 bg-primary/15 hover:bg-primary/25"
+                      : "border-b border-border/80 odd:bg-muted/15 hover:bg-muted/35"
+                  }
                 >
                   <td className="px-3 py-2.5 font-bold tabular-nums sm:px-4">
                     {index + 1}
