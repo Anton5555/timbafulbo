@@ -2,8 +2,10 @@
 
 import {
   CheckIcon,
+  CopySimpleIcon,
   PlusCircleIcon,
   ShareNetworkIcon,
+  SoccerBallIcon,
   TrashIcon,
   TrophyIcon,
 } from "@phosphor-icons/react"
@@ -11,10 +13,12 @@ import { useRouter } from "next/navigation"
 import { useOptimistic, useState, useTransition } from "react"
 import { toast } from "sonner"
 
+import { copyPredictionsFromLeague } from "@/app/(authed)/dashboard/prediction-actions"
 import {
   deleteTournament,
   joinTournamentByInviteCode,
 } from "@/app/(authed)/dashboard/tournament-actions"
+import { CreateTournamentResponsiveShell } from "@/components/dashboard/create-tournament/responsive-shell"
 import { CreateTournamentTrigger } from "@/components/dashboard/create-tournament/create-tournament-trigger"
 import {
   Drawer,
@@ -35,6 +39,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useIsDesktopSm } from "@/hooks/use-media-query"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
 import { buildTournamentInvitePath } from "@/lib/invite-url"
@@ -63,22 +74,153 @@ function roleLabel(role: MyTournamentRow["role"]): string {
   }
 }
 
+function CopyPredictionsFromLeagueDialog({
+  targetLeague,
+  sourceLeagues,
+  open,
+  onOpenChange,
+  onCopied,
+}: {
+  targetLeague: MyTournamentRow
+  sourceLeagues: MyTournamentRow[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCopied: () => void
+}) {
+  const [sourceId, setSourceId] = useState(() => sourceLeagues[0]?.id ?? "")
+  const [busy, setBusy] = useState(false)
+
+  const effectiveSourceId =
+    sourceLeagues.some((l) => l.id === sourceId) ? sourceId : sourceLeagues[0]?.id ?? ""
+
+  async function handleCopy() {
+    if (!effectiveSourceId) {
+      toast.error("Elegí una liga de origen.")
+      return
+    }
+
+    setBusy(true)
+    const res = await copyPredictionsFromLeague({
+      sourceTournamentId: effectiveSourceId,
+      targetTournamentId: targetLeague.id,
+    })
+    setBusy(false)
+
+    if (!res.ok) {
+      toast.error(res.error)
+      return
+    }
+
+    const parts: string[] = []
+    if (res.copied > 0) {
+      parts.push(`Copiados ${res.copied}`)
+    } else {
+      parts.push("Sin partidos abiertos para copiar")
+    }
+    if (res.skippedLocked > 0) {
+      parts.push(`Omitidos ${res.skippedLocked} (cerrados)`)
+    }
+    if (res.bonusCopied > 0) {
+      parts.push(`Bonus ${res.bonusCopied}`)
+    }
+
+    toast.success(parts.join(" · "))
+    onOpenChange(false)
+    onCopied()
+  }
+
+  return (
+    <CreateTournamentResponsiveShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Copiar pronósticos"
+      description={`Destino: ${targetLeague.name}`}
+      footer={
+        <Button
+          type="button"
+          variant="default"
+          disabled={busy || sourceLeagues.length === 0}
+          className="h-12 w-full rounded-none font-black tracking-[0.2em] uppercase"
+          onClick={() => void handleCopy()}
+        >
+          {busy ? (
+            <>
+              <SoccerBallIcon
+                className="size-4 animate-spin"
+                weight="duotone"
+                aria-hidden
+              />
+              Copiando…
+            </>
+          ) : (
+            "Copiar"
+          )}
+        </Button>
+      }
+    >
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label
+            htmlFor={`copy-source-${targetLeague.id}`}
+            className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
+          >
+            Copiar desde
+          </Label>
+          <Select
+            value={effectiveSourceId}
+            onValueChange={setSourceId}
+            disabled={busy || sourceLeagues.length === 0}
+          >
+            <SelectTrigger
+              id={`copy-source-${targetLeague.id}`}
+              className="w-full rounded-none border-border bg-background font-bold"
+            >
+              <SelectValue placeholder="Elegí una liga" />
+            </SelectTrigger>
+            <SelectContent>
+              {sourceLeagues.map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="border border-dashed border-border bg-muted/20 px-3 py-3">
+          <p className="border-l-2 border-primary pl-2 text-[10px] leading-relaxed font-bold tracking-wide text-muted-foreground uppercase">
+            <span className="text-primary">{">"}</span> Solo se copian partidos
+            aún abiertos. Sobrescribe pronósticos ya cargados en esta liga.
+          </p>
+        </div>
+      </div>
+    </CreateTournamentResponsiveShell>
+  )
+}
+
 function LeagueCard({
   league,
   winner,
   deletePending,
   onDeleteConfirmed,
+  canCopyPredictions,
+  sourceLeagues,
+  onPredictionsCopied,
 }: {
   league: MyTournamentRow
   winner: TournamentWinner
   deletePending: boolean
   onDeleteConfirmed: () => void
+  canCopyPredictions: boolean
+  sourceLeagues: MyTournamentRow[]
+  onPredictionsCopied: () => void
 }) {
   const isDesktop = useIsDesktopSm()
   const [confirming, setConfirming] = useState(false)
   const [copied, setCopied] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [shareBusy, setShareBusy] = useState(false)
+  const [copyOpen, setCopyOpen] = useState(false)
 
   function getInviteUrl(): string {
     const path = buildTournamentInvitePath(league.inviteCode)
@@ -200,6 +342,29 @@ function LeagueCard({
             {league.inviteCode}
           </code>
         </div>
+
+        {canCopyPredictions ? (
+          <div className="mt-4 border-t border-dashed border-border pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full rounded-none font-black tracking-[0.15em] uppercase"
+              onClick={() => setCopyOpen(true)}
+              aria-label={`Copiar pronósticos a ${league.name} desde otra liga`}
+            >
+              <CopySimpleIcon className="size-4" weight="duotone" aria-hidden />
+              Copiar pronósticos desde…
+            </Button>
+            <CopyPredictionsFromLeagueDialog
+              targetLeague={league}
+              sourceLeagues={sourceLeagues}
+              open={copyOpen}
+              onOpenChange={setCopyOpen}
+              onCopied={onPredictionsCopied}
+            />
+          </div>
+        ) : null}
 
         {league.isOwner ? (
           <div className="mt-4 space-y-3 border-t border-dashed border-border pt-4">
@@ -436,6 +601,11 @@ export function MyLeaguesTab({
   }
 
   const listEmpty = optimisticLeagues.length === 0
+  const canCopyPredictions = optimisticLeagues.length > 1
+
+  function handlePredictionsCopied() {
+    router.refresh()
+  }
 
   return (
     <div className="space-y-6">
@@ -497,6 +667,9 @@ export function MyLeaguesTab({
               }
               deletePending={deletePending}
               onDeleteConfirmed={() => handleDeleteLeague(league.id)}
+              canCopyPredictions={canCopyPredictions}
+              sourceLeagues={optimisticLeagues.filter((l) => l.id !== league.id)}
+              onPredictionsCopied={handlePredictionsCopied}
             />
           ))}
         </div>
