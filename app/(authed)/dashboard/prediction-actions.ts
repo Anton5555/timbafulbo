@@ -31,7 +31,7 @@ export type UpsertPredictionResult =
       awayScore: number
       penaltyWinner: PenaltyWinnerSide | null
     }
-  | { ok: false; error: string }
+  | { ok: false; error: string; code?: "prediction-closed" }
 
 export async function upsertPrediction(
   input: z.infer<typeof upsertSchema>
@@ -74,7 +74,11 @@ export async function upsertPrediction(
       Date.now()
     )
   ) {
-    return { ok: false, error: "Predicciones cerradas para este partido." }
+    return {
+      ok: false,
+      error: "Predicciones cerradas para este partido.",
+      code: "prediction-closed",
+    }
   }
 
   const ko = isKnockoutStage(match.stage)

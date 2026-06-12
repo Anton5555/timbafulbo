@@ -12,6 +12,10 @@ import {
 } from "react"
 
 import { upsertPrediction } from "@/app/(authed)/dashboard/prediction-actions"
+import {
+  beginPredictionEdit,
+  endPredictionEdit,
+} from "@/components/dashboard/use-periodic-refresh"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -312,6 +316,10 @@ export function MatchPredictionTicket({
     "idle",
   )
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  /** Server rejected a save because the window closed; lock the ticket now. */
+  const [forceClosed, setForceClosed] = useState(false)
+
+  const predictionOpen = match.predictionOpen && !forceClosed
 
   const lastPersisted = useRef<{
     home: number
@@ -380,20 +388,26 @@ export function MatchPredictionTicket({
     )
 
     if (!dirty) return
-    if (!match.predictionOpen) return
+    if (!predictionOpen) return
 
     const myGen = ++saveGeneration.current
     setSaveState("saving")
     setErrorMsg(null)
 
-    const res = await upsertPrediction({
-      tournamentId,
-      matchId: match.id,
-      homeScore: nextHome,
-      awayScore: nextAway,
-      penaltyWinner: eff,
-      applyToAllTournaments,
-    })
+    beginPredictionEdit()
+    let res: Awaited<ReturnType<typeof upsertPrediction>>
+    try {
+      res = await upsertPrediction({
+        tournamentId,
+        matchId: match.id,
+        homeScore: nextHome,
+        awayScore: nextAway,
+        penaltyWinner: eff,
+        applyToAllTournaments,
+      })
+    } finally {
+      endPredictionEdit()
+    }
 
     if (myGen !== saveGeneration.current) return
 
@@ -404,6 +418,14 @@ export function MatchPredictionTicket({
         penalty: res.penaltyWinner,
       }
       setSaveState("idle")
+      startTransition(() => {
+        router.refresh()
+      })
+    } else if (res.code === "prediction-closed") {
+      // The window closed under a stale UI: lock the ticket immediately.
+      setForceClosed(true)
+      setSaveState("idle")
+      setErrorMsg(null)
       startTransition(() => {
         router.refresh()
       })
@@ -419,9 +441,14 @@ export function MatchPredictionTicket({
     nextPenaltyPick: PenaltyWinnerSide | null,
   ) {
     if (!isCompleteScorePair(nextHome, nextAway)) return
-    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    } else {
+      beginPredictionEdit()
+    }
     debounceTimer.current = setTimeout(() => {
       debounceTimer.current = null
+      endPredictionEdit()
       void persistScores(nextHome, nextAway, nextPenaltyPick)
     }, DEBOUNCE_MS)
   }
@@ -465,7 +492,7 @@ export function MatchPredictionTicket({
       setPenaltyWinner(null)
     }
 
-    if (!match.predictionOpen) return
+    if (!predictionOpen) return
 
     const eff = effectivePenaltyForPersist(
       match.stage,
@@ -484,7 +511,7 @@ export function MatchPredictionTicket({
     if (home === null || away === null) return
 
     setPenaltyWinner(side)
-    if (!match.predictionOpen) return
+    if (!predictionOpen) return
     const eff = effectivePenaltyForPersist(match.stage, home, away, side)
     const dirty = isPredictionDirty(home, away, eff, true)
     if (!dirty) return
@@ -511,7 +538,7 @@ export function MatchPredictionTicket({
       stage: match.stage,
       tournamentId,
       matchId: match.id,
-      open: match.predictionOpen,
+      open: predictionOpen,
       touched: isTouchedRef.current,
       applyToAllTournaments,
     }
@@ -520,7 +547,7 @@ export function MatchPredictionTicket({
     home,
     penaltyWinner,
     match.id,
-    match.predictionOpen,
+    predictionOpen,
     match.stage,
     tournamentId,
     applyToAllTournaments,
@@ -537,6 +564,7 @@ export function MatchPredictionTicket({
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
         debounceTimer.current = null
+        endPredictionEdit()
       }
       const L = latestFlush.current
       if (!L.open) return
@@ -611,7 +639,7 @@ export function MatchPredictionTicket({
     match.awayScore !== null &&
     match.awayScore < match.homeScore
 
-  const showLiquidation = !match.predictionOpen && hasFinalScore
+  const showLiquidation = !predictionOpen && hasFinalScore
   const liquidationResult = match.userPredictionResult
 
   const saving = saveState === "saving" || isPending
@@ -620,7 +648,7 @@ export function MatchPredictionTicket({
     scoresComplete &&
     isKnockoutStage(match.stage) &&
     home === away &&
-    match.predictionOpen
+    predictionOpen
   const showIncompletePenaltyPick =
     showPenaltyPick && isTouched && penaltyWinner === null
 
@@ -628,7 +656,7 @@ export function MatchPredictionTicket({
     <article
       className={cn(
         "group relative flex flex-col border border-border bg-card transition-all",
-        predictionsEnabled && match.predictionOpen && "hover:border-primary/50",
+        predictionsEnabled && predictionOpen && "hover:border-primary/50",
         saveState === "error" && "border-destructive/60",
         showLiquidation &&
           liquidationResult?.kind === "exact" &&
@@ -664,7 +692,7 @@ export function MatchPredictionTicket({
               {showLiquidation ? "Liquidación" : "Tu pronóstico"}
             </span>
             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-              {match.predictionOpen ? (
+              {predictionOpen ? (
                 <span className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase sm:text-[10px]">
                   Cierra {predictionCloseTimeLabel}
                 </span>
@@ -683,7 +711,7 @@ export function MatchPredictionTicket({
             </div>
           </div>
 
-          {match.predictionOpen ? (
+          {predictionOpen ? (
             <>
               <div className="mt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-6">
                 <ScoreStepper
