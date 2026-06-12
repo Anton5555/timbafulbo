@@ -35,9 +35,12 @@ export function hasActivePredictionEdits(): boolean {
 export function usePeriodicRefresh(): void {
   const router = useRouter()
   const hiddenSinceRef = useRef<number | null>(null)
-  const lastRefreshRef = useRef(Date.now())
+  const lastRefreshRef = useRef(0)
 
   useEffect(() => {
+    if (lastRefreshRef.current === 0) {
+      lastRefreshRef.current = Date.now()
+    }
     const refresh = () => {
       if (hasActivePredictionEdits()) return
       lastRefreshRef.current = Date.now()

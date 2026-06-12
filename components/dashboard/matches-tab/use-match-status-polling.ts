@@ -73,8 +73,6 @@ export function useMatchStatusPolling({
   const lastFetchMsRef = useRef(0)
   /** serverTime − clientTime, so lock cutoffs use server-synced time. */
   const clockOffsetRef = useRef(0)
-  /** Bumped by a timer at the exact lock-close instant to re-render closed tickets. */
-  const [lockTick, setLockTick] = useState(0)
 
   const syncedNow = useCallback(
     () => Date.now() + clockOffsetRef.current,
@@ -82,9 +80,9 @@ export function useMatchStatusPolling({
   )
 
   const displayMatches = useMemo(() => {
-    // lockTick re-runs this memo when a prediction window closes locally.
-    void lockTick
-    const nowMs = Date.now() + clockOffsetRef.current
+    // referenceTimeMs advances on every poll and at each lock-close instant,
+    // so this recomputes exactly when a prediction window closes.
+    const nowMs = referenceTimeMs
     return matches.map((m) => {
       const status = pollOverlay.get(m.id)
       const merged = status ? mergeMatchStatusIntoTabMatch(m, status) : m
@@ -98,7 +96,7 @@ export function useMatchStatusPolling({
       }
       return merged
     })
-  }, [matches, pollOverlay, lockTick])
+  }, [matches, pollOverlay, referenceTimeMs])
 
   const fetchStatuses = useCallback(async () => {
     if (!enabled || matches.length === 0) return
@@ -203,7 +201,6 @@ export function useMatchStatusPolling({
 
     const timer = window.setTimeout(() => {
       setReferenceTimeMs(syncedNow())
-      setLockTick((t) => t + 1)
     }, nextCloseMs - nowMs + 250)
 
     return () => window.clearTimeout(timer)
