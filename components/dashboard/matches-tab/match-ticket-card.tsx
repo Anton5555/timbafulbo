@@ -1,7 +1,18 @@
+"use client"
+
+import { InfoIcon } from "@phosphor-icons/react"
+
 import { TeamEmblem } from "@/components/team-emblem"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
 
 import type { MatchesTabMatch, MatchesTabTeam } from "./types"
+
+const RESULT_DELAY_MS = 2 * 60 * 60 * 1000
 
 const timeFmt = new Intl.DateTimeFormat("es", {
   hour: "2-digit",
@@ -58,11 +69,13 @@ function MatchTicketCenter({
   start,
   isLive,
   hasScore,
+  resultDelayed,
 }: {
   match: MatchesTabMatch
   start: Date
   isLive: boolean
   hasScore: boolean
+  resultDelayed: boolean
 }) {
   const stage = stageCenterLabel(match)
   const showPenaltiesResult =
@@ -100,6 +113,23 @@ function MatchTicketCenter({
         <span className="flex animate-pulse items-center gap-1 text-[9px] font-black uppercase tracking-tighter text-destructive">
           <span className="size-1 shrink-0 rounded-full bg-destructive" />
           <span>En vivo</span>
+          {resultDelayed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Información sobre demora de resultados"
+                >
+                  <InfoIcon className="size-3" weight="bold" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-56 text-center">
+                Los resultados pueden tardar en llegar debido a restricciones de
+                la API. ¡Paciencia!
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
         </span>
       ) : (
         <span
@@ -127,6 +157,10 @@ export function MatchTicketCard({
     match.isFinal &&
     match.homeScore !== null &&
     match.awayScore !== null
+  const resultDelayed =
+    isLive &&
+    !hasScore &&
+    referenceTimeMs - start.getTime() >= RESULT_DELAY_MS
 
   return (
     <article className="group relative flex items-stretch border border-border bg-card transition-all hover:border-primary/50">
@@ -137,6 +171,7 @@ export function MatchTicketCard({
         start={start}
         isLive={isLive}
         hasScore={hasScore}
+        resultDelayed={resultDelayed}
       />
       <MatchTicketTeamColumn team={match.awayTeam} paddingClass="pr-5 pl-2" />
     </article>

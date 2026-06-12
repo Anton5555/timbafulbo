@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { NuqsProvider } from "@/components/nuqs-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils";
 
 const fontSans = Geist({
@@ -25,7 +26,9 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
-          <NuqsProvider>{children}</NuqsProvider>
+          <TooltipProvider>
+            <NuqsProvider>{children}</NuqsProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

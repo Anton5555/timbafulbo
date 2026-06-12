@@ -1,7 +1,7 @@
 "use client"
 
 import type { PenaltyWinnerSide } from "@/generated/prisma/client"
-import { SoccerBallIcon } from "@phosphor-icons/react"
+import { InfoIcon, SoccerBallIcon } from "@phosphor-icons/react"
 import { useRouter } from "next/navigation"
 import {
   useEffect,
@@ -13,6 +13,11 @@ import {
 
 import { upsertPrediction } from "@/app/(authed)/dashboard/prediction-actions"
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { TeamEmblem } from "@/components/team-emblem"
 import { isKnockoutStage } from "@/lib/knockout-stage"
 import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
@@ -22,6 +27,7 @@ import type { MatchesTabMatch, MatchesTabTeam } from "./types"
 
 /** Long enough to set local + visitante (and penalties) without mid-edit saves. */
 const DEBOUNCE_MS = 2000
+const RESULT_DELAY_MS = 2 * 60 * 60 * 1000
 const SCORE_MIN = 0
 const SCORE_MAX = 30
 
@@ -118,11 +124,13 @@ function MatchTicketCenter({
   start,
   isLive,
   hasScore,
+  resultDelayed,
 }: {
   match: MatchesTabMatch
   start: Date
   isLive: boolean
   hasScore: boolean
+  resultDelayed: boolean
 }) {
   const stage = stageCenterLabel(match)
   const showPenaltiesResult =
@@ -160,6 +168,23 @@ function MatchTicketCenter({
         <span className="flex animate-pulse items-center gap-1 text-[9px] font-black uppercase tracking-tighter text-destructive">
           <span className="size-1 shrink-0 rounded-full bg-destructive" />
           <span>En vivo</span>
+          {resultDelayed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Información sobre demora de resultados"
+                >
+                  <InfoIcon className="size-3" weight="bold" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-56 text-center">
+                Los resultados pueden tardar en llegar debido a restricciones de
+                la API. ¡Paciencia!
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
         </span>
       ) : (
         <span
@@ -541,6 +566,10 @@ export function MatchPredictionTicket({
     match.isFinal &&
     match.homeScore !== null &&
     match.awayScore !== null
+  const resultDelayed =
+    isLive &&
+    !hasScore &&
+    referenceTimeMs - start.getTime() >= RESULT_DELAY_MS
 
   const scoreDraw =
     hasScore &&
@@ -601,6 +630,7 @@ export function MatchPredictionTicket({
           start={start}
           isLive={isLive}
           hasScore={hasScore}
+          resultDelayed={resultDelayed}
         />
         <MatchTicketTeamColumn
           team={match.awayTeam}
