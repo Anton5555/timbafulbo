@@ -101,6 +101,7 @@ export async function GET(request: Request) {
       id: true,
       startTime: true,
       stage: true,
+      status: true,
       isFinal: true,
       homeScore: true,
       awayScore: true,

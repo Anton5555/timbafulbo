@@ -1,4 +1,8 @@
-import type { MatchStage, PenaltyWinnerSide } from "@/generated/prisma/client"
+import type {
+  FootballDataMatchStatus,
+  MatchStage,
+  PenaltyWinnerSide,
+} from "@/generated/prisma/client"
 
 import type { PredictionEvaluation } from "@/lib/prode-scoring"
 
@@ -15,6 +19,7 @@ export type MatchesTabMatch = {
   homeScore: number | null
   awayScore: number | null
   penaltyWinner: PenaltyWinnerSide | null
+  status: FootballDataMatchStatus | null
   isFinal: boolean
   homeTeam: MatchesTabTeam
   awayTeam: MatchesTabTeam

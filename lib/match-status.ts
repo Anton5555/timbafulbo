@@ -1,4 +1,8 @@
-import type { MatchStage, PenaltyWinnerSide } from "@/generated/prisma/client"
+import type {
+  FootballDataMatchStatus,
+  MatchStage,
+  PenaltyWinnerSide,
+} from "@/generated/prisma/client"
 
 import type { MatchesTabMatch } from "@/components/dashboard/matches-tab/types"
 import { canEditPrediction, PREDICTION_LOCK_MINUTES_BEFORE } from "@/lib/prediction-window"
@@ -15,6 +19,7 @@ const NEAR_LOCK_MS = 5 * MS
 export type MatchStatusDto = {
   id: string
   startTime: string
+  status: FootballDataMatchStatus | null
   isFinal: boolean
   homeScore: number | null
   awayScore: number | null
@@ -27,10 +32,23 @@ type MatchStatusInput = {
   id: string
   startTime: Date
   stage: MatchStage
+  status: FootballDataMatchStatus | null
   isFinal: boolean
   homeScore: number | null
   awayScore: number | null
   penaltyWinner: PenaltyWinnerSide | null
+}
+
+export function isMatchLiveStatus(
+  status: FootballDataMatchStatus | null | undefined,
+): boolean {
+  return (
+    status === "IN_PLAY" ||
+    status === "LIVE" ||
+    status === "PAUSED" ||
+    status === "EXTRA_TIME" ||
+    status === "PENALTY_SHOOTOUT"
+  )
 }
 
 type UserPredictionInput = {
@@ -67,6 +85,7 @@ export function buildMatchStatusDto(
   return {
     id: match.id,
     startTime: match.startTime.toISOString(),
+    status: match.status,
     isFinal: match.isFinal,
     homeScore: match.homeScore,
     awayScore: match.awayScore,
@@ -87,6 +106,7 @@ export function mergeMatchStatusIntoTabMatch(
   return {
     ...local,
     startTime: status.startTime,
+    status: status.status,
     isFinal: status.isFinal,
     homeScore: status.homeScore,
     awayScore: status.awayScore,

@@ -1,4 +1,5 @@
 import type {
+  FootballDataMatchStatus,
   MatchStage,
   MembershipRole,
   PenaltyWinnerSide,
@@ -34,7 +35,9 @@ export type DashboardMatch = {
   homeScore: number | null
   awayScore: number | null
   penaltyWinner: PenaltyWinnerSide | null
-  /** Derived from football-data `FINISHED` only; UI and scoring must not use raw `Match.status`. */
+  /** football-data match status; drives live UI. Scoring still uses `isFinal` + scores. */
+  status: FootballDataMatchStatus | null
+  /** True when football-data reports finished/awarded and both scores are present. */
   isFinal: boolean
   homeTeam: DashboardMatchTeam
   awayTeam: DashboardMatchTeam

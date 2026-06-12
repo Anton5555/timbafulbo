@@ -49,10 +49,14 @@ enum InvitationStatus {
 /// football-data.org v4 match `status` filter values (see API docs).
 enum FootballDataMatchStatus {
   SCHEDULED
+  TIMED
   LIVE
   IN_PLAY
   PAUSED
+  EXTRA_TIME
+  PENALTY_SHOOTOUT
   FINISHED
+  AWARDED
   POSTPONED
   SUSPENDED
   CANCELLED

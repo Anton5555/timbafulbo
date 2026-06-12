@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip"
 import { TeamEmblem } from "@/components/team-emblem"
 import { isKnockoutStage } from "@/lib/knockout-stage"
+import { isMatchLiveStatus } from "@/lib/match-status"
 import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
 import { cn } from "@/lib/utils"
 
@@ -134,7 +135,7 @@ function MatchTicketCenter({
 }) {
   const stage = stageCenterLabel(match)
   const showPenaltiesResult =
-    hasScore &&
+    match.isFinal &&
     match.homeScore !== null &&
     match.awayScore !== null &&
     match.homeScore === match.awayScore &&
@@ -561,25 +562,28 @@ export function MatchPredictionTicket({
   }, [match.id, tournamentId, applyToAllTournaments])
 
   const start = new Date(match.startTime)
-  const isLive = !match.isFinal && start.getTime() <= referenceTimeMs
-  const hasScore =
-    match.isFinal &&
-    match.homeScore !== null &&
-    match.awayScore !== null
+  const isLive =
+    match.status != null
+      ? isMatchLiveStatus(match.status)
+      : !match.isFinal && start.getTime() <= referenceTimeMs
+  const hasScoresPresent =
+    match.homeScore !== null && match.awayScore !== null
+  const hasScore = hasScoresPresent && (match.isFinal || isLive)
+  const hasFinalScore = match.isFinal && hasScoresPresent
   const resultDelayed =
     isLive &&
-    !hasScore &&
+    !hasScoresPresent &&
     referenceTimeMs - start.getTime() >= RESULT_DELAY_MS
 
   const scoreDraw =
-    hasScore &&
+    hasFinalScore &&
     match.homeScore !== null &&
     match.awayScore !== null &&
     match.homeScore === match.awayScore
 
   const homeDimmed =
     match.isFinal &&
-    hasScore &&
+    hasFinalScore &&
     !scoreDraw &&
     match.homeScore !== null &&
     match.awayScore !== null &&
@@ -587,13 +591,13 @@ export function MatchPredictionTicket({
 
   const awayDimmed =
     match.isFinal &&
-    hasScore &&
+    hasFinalScore &&
     !scoreDraw &&
     match.homeScore !== null &&
     match.awayScore !== null &&
     match.awayScore < match.homeScore
 
-  const showLiquidation = !match.predictionOpen && hasScore
+  const showLiquidation = !match.predictionOpen && hasFinalScore
   const liquidationResult = match.userPredictionResult
 
   const saving = saveState === "saving" || isPending

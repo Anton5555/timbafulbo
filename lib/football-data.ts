@@ -43,7 +43,8 @@ export function parseGroupLetterFromApiGroup(
 
 /**
  * Map football-data v4 `match.status` string to our Prisma enum, or null if unknown/empty.
- * See API filter docs: SCHEDULED | LIVE | IN_PLAY | PAUSED | FINISHED | POSTPONED | SUSPENDED | CANCELLED
+ * See API enum table: SCHEDULED | TIMED | IN_PLAY | PAUSED | EXTRA_TIME | PENALTY_SHOOTOUT |
+ * FINISHED | SUSPENDED | POSTPONED | CANCELLED | AWARDED (+ legacy LIVE).
  */
 export function parseFootballDataMatchStatus(
   raw: string | null | undefined,
@@ -54,14 +55,22 @@ export function parseFootballDataMatchStatus(
   switch (s) {
     case "SCHEDULED":
       return FootballDataMatchStatus.SCHEDULED
+    case "TIMED":
+      return FootballDataMatchStatus.TIMED
     case "LIVE":
       return FootballDataMatchStatus.LIVE
     case "IN_PLAY":
       return FootballDataMatchStatus.IN_PLAY
     case "PAUSED":
       return FootballDataMatchStatus.PAUSED
+    case "EXTRA_TIME":
+      return FootballDataMatchStatus.EXTRA_TIME
+    case "PENALTY_SHOOTOUT":
+      return FootballDataMatchStatus.PENALTY_SHOOTOUT
     case "FINISHED":
       return FootballDataMatchStatus.FINISHED
+    case "AWARDED":
+      return FootballDataMatchStatus.AWARDED
     case "POSTPONED":
       return FootballDataMatchStatus.POSTPONED
     case "SUSPENDED":
@@ -96,7 +105,21 @@ export function resolveMatchIsFinalFromApi(
   )
 }
 
-/** True only when football-data reports the match as finished (terminal result state). */
+function parsedMatchStatus(
+  status:
+    | FootballDataMatchStatus
+    | string
+    | null
+    | undefined,
+): FootballDataMatchStatus | null {
+  if (status == null) return null
+  if (typeof status === "string") {
+    return parseFootballDataMatchStatus(status)
+  }
+  return status
+}
+
+/** True when football-data reports a terminal result state (finished or awarded). */
 export function isMatchFinishedStatus(
   status:
     | FootballDataMatchStatus
@@ -104,11 +127,11 @@ export function isMatchFinishedStatus(
     | null
     | undefined,
 ): boolean {
-  if (status == null) return false
-  if (typeof status === "string") {
-    return parseFootballDataMatchStatus(status) === FootballDataMatchStatus.FINISHED
-  }
-  return status === FootballDataMatchStatus.FINISHED
+  const parsed = parsedMatchStatus(status)
+  return (
+    parsed === FootballDataMatchStatus.FINISHED ||
+    parsed === FootballDataMatchStatus.AWARDED
+  )
 }
 
 /**
