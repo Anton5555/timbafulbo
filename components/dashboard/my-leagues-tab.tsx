@@ -19,6 +19,7 @@ import {
   joinTournamentByInviteCode,
 } from "@/app/(authed)/dashboard/tournament-actions"
 import { CreateTournamentResponsiveShell } from "@/components/dashboard/create-tournament/responsive-shell"
+import { TournamentRulesSummary } from "@/components/dashboard/tournament-rules-summary"
 import { CreateTournamentTrigger } from "@/components/dashboard/create-tournament/create-tournament-trigger"
 import {
   Drawer,
@@ -334,7 +335,9 @@ function LeagueCard({
         ) : null}
       </CardHeader>
       <CardContent className="pt-3">
-        <div className="flex flex-col gap-1">
+        <TournamentRulesSummary rules={league.rules} variant="inline" />
+
+        <div className="mt-3 flex flex-col gap-1">
           <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
             Código de invitación
           </span>

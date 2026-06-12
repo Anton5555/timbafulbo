@@ -3,6 +3,7 @@
 import { TrophyIcon } from "@phosphor-icons/react"
 import { useQueryState } from "nuqs"
 
+import { TournamentRulesSummary } from "@/components/dashboard/tournament-rules-summary"
 import { dashboardTournamentParser } from "@/components/dashboard/tournament-search-params"
 import {
   Select,
@@ -11,7 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { LeaderboardRow, TournamentWinner } from "@/lib/dashboard-data"
+import type {
+  LeaderboardRow,
+  TournamentWinner,
+} from "@/lib/dashboard-data"
+import type { TournamentRules } from "@/lib/tournament-rules"
 
 function formatWinnerBanner(winners: LeaderboardRow[]): string | null {
   if (winners.length === 0) return null
@@ -30,10 +35,12 @@ export function LeaderboardsTab({
   tournaments,
   leaderboardsByTournamentId,
   winnerByTournamentId,
+  rulesByTournamentId,
 }: {
   tournaments: { id: string; name: string }[]
   leaderboardsByTournamentId: Record<string, LeaderboardRow[]>
   winnerByTournamentId: Record<string, TournamentWinner>
+  rulesByTournamentId: Record<string, TournamentRules>
 }) {
   const [tournamentId, setTournamentId] = useQueryState(
     "tournament",
@@ -59,6 +66,10 @@ export function LeaderboardsTab({
   const winnerUserIds = new Set(
     winnerData.winners.map((w) => w.userId)
   )
+
+  const selectedRules = tournamentId
+    ? rulesByTournamentId[tournamentId]
+    : undefined
 
   if (tournaments.length === 0) {
     return (
@@ -95,6 +106,10 @@ export function LeaderboardsTab({
           </SelectContent>
         </Select>
       </div>
+
+      {selectedRules ? (
+        <TournamentRulesSummary rules={selectedRules} variant="banner" />
+      ) : null}
 
       {winnerBannerText ? (
         <div

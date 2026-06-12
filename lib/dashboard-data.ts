@@ -15,7 +15,7 @@ import {
   filterMatchesForPredictionView,
   filterReadOnlyDashboardMatches,
 } from "@/lib/dashboard-matches-visibility"
-import { parseRules } from "@/lib/tournament-rules"
+import { parseRules, type TournamentRules } from "@/lib/tournament-rules"
 import { canEditPrediction } from "@/lib/prediction-window"
 import { userHasTournamentAccess } from "@/lib/tournament-access"
 import { displayTeamNameEs } from "@/lib/team-display-name"
@@ -59,6 +59,7 @@ export type MyTournamentRow = {
   name: string
   inviteCode: string
   role: MembershipRole
+  rules: TournamentRules
   /** Current user is the tournament creator/owner (the only admin we currently expect). */
   isOwner: boolean
   /** Only when you're a tournament admin. */
@@ -237,7 +238,7 @@ export async function getMyTournaments(
 ): Promise<MyTournamentRow[]> {
   const owned = await prisma.tournament.findMany({
     where: { ownerId: userId },
-    select: { id: true, name: true, inviteCode: true },
+    select: { id: true, name: true, inviteCode: true, rules: true },
     orderBy: { createdAt: "desc" },
   })
 
@@ -245,7 +246,7 @@ export async function getMyTournaments(
     where: { userId },
     include: {
       tournament: {
-        select: { id: true, name: true, inviteCode: true },
+        select: { id: true, name: true, inviteCode: true, rules: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -274,6 +275,7 @@ export async function getMyTournaments(
       id: t.id,
       name: t.name,
       inviteCode: t.inviteCode,
+      rules: parseRules(t.rules),
       role: "ADMIN",
       isOwner: true,
       pendingInvitations: pendingByTournament.get(t.id) ?? 0,
@@ -287,12 +289,28 @@ export async function getMyTournaments(
       id: m.tournament.id,
       name: m.tournament.name,
       inviteCode: m.tournament.inviteCode,
+      rules: parseRules(m.tournament.rules),
       role: m.role,
       isOwner: false,
     })
   }
 
   return rows
+}
+
+export async function getTournamentRulesByIds(
+  ids: string[]
+): Promise<Record<string, TournamentRules>> {
+  if (ids.length === 0) return {}
+
+  const tournaments = await prisma.tournament.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, rules: true },
+  })
+
+  return Object.fromEntries(
+    tournaments.map((t) => [t.id, parseRules(t.rules)])
+  )
 }
 
 export async function getLeaderboardForTournament(

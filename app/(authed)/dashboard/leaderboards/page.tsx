@@ -10,6 +10,7 @@ import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
 import { LeaderboardsTab } from "@/components/dashboard/leaderboards-tab"
 import {
   getLeaderboardForTournament,
+  getTournamentRulesByIds,
   getTournamentWinner,
 } from "@/lib/dashboard-data"
 export const dynamic = "force-dynamic"
@@ -30,15 +31,18 @@ export default async function DashboardLeaderboardsPage({
     preserveMatchFilter: sp.matchFilter,
   })
 
-  const tournamentDataEntries = await Promise.all(
-    tournaments.map(async (t) => {
-      const [rows, winner] = await Promise.all([
-        getLeaderboardForTournament(t.id),
-        getTournamentWinner(t.id),
-      ])
-      return [t.id, { rows, winner }] as const
-    })
-  )
+  const [rulesByTournamentId, tournamentDataEntries] = await Promise.all([
+    getTournamentRulesByIds(tournaments.map((t) => t.id)),
+    Promise.all(
+      tournaments.map(async (t) => {
+        const [rows, winner] = await Promise.all([
+          getLeaderboardForTournament(t.id),
+          getTournamentWinner(t.id),
+        ])
+        return [t.id, { rows, winner }] as const
+      })
+    ),
+  ])
 
   const leaderboardsByTournamentId = Object.fromEntries(
     tournamentDataEntries.map(([id, data]) => [id, data.rows])
@@ -63,6 +67,7 @@ export default async function DashboardLeaderboardsPage({
             tournaments={tournaments}
             leaderboardsByTournamentId={leaderboardsByTournamentId}
             winnerByTournamentId={winnerByTournamentId}
+            rulesByTournamentId={rulesByTournamentId}
           />
         </DashboardTabs>
       </Suspense>
