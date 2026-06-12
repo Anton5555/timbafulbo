@@ -37,15 +37,10 @@ async function main() {
   const prisma = new PrismaClient({ adapter })
 
   const mode = isFullSyncMode() ? "full" : "incremental"
+  console.log(`[sync-wc] Iniciando sincronización mode=${mode}`)
   try {
     const summary = await syncWcScores(prisma, token, mode)
-    if (summary.mode === "incremental" && summary.candidates === 0) {
-      console.log(
-        "[sync-wc] mode=incremental No hay partidos candidatos (pendientes o marcador faltante y startTime dentro de +2h). Gasto API: 0",
-      )
-    } else {
-      logSyncSummary(summary)
-    }
+    logSyncSummary(summary)
   } finally {
     await prisma.$disconnect()
     await pool.end()

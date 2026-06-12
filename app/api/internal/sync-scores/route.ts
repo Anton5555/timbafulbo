@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto"
 import { NextResponse } from "next/server"
 import { env } from "@/env"
-import { syncWcScores } from "@/lib/football-data-sync"
+import { logSyncSummary, syncWcScores } from "@/lib/football-data-sync"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -40,6 +40,7 @@ async function handleSync(request: Request) {
 
   try {
     const summary = await syncWcScores(prisma, token, mode)
+    logSyncSummary(summary)
     return NextResponse.json({ ok: true, ...summary })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sync failed"
