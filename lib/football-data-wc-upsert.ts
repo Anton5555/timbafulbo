@@ -1,10 +1,10 @@
 import type { MatchStage, PenaltyWinnerSide, PrismaClient } from "@/generated/prisma/client"
 import {
-  isMatchFinishedStatus,
   mapFootballDataStageToMatchStage,
   mapFootballDataWinnerToPenaltySide,
   parseFootballDataMatchStatus,
   parseGroupLetterFromApiGroup,
+  resolveMatchIsFinalFromApi,
 } from "@/lib/football-data"
 import { isKnockoutStage } from "@/lib/knockout-stage"
 import { flagCdnUrlFromTeamCode } from "@/lib/flagcdn"
@@ -172,10 +172,14 @@ export async function upsertWcMatchFromApi(
   const startTime = new Date(m.utcDate)
   const lastUpdated = new Date(m.lastUpdated)
   const parsedStatus = parseFootballDataMatchStatus(m.status)
-  const isFinal = isMatchFinishedStatus(parsedStatus)
   const apiSyncedAt = new Date()
   const homeScore = m.score?.fullTime?.home ?? null
   const awayScore = m.score?.fullTime?.away ?? null
+  const isFinal = resolveMatchIsFinalFromApi(
+    parsedStatus,
+    homeScore,
+    awayScore,
+  )
   const penaltyWinner = resolveMatchPenaltyWinnerFromApi(
     stage,
     homeScore,

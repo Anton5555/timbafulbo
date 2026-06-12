@@ -9,8 +9,10 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    /** football-data.org API token (`X-Auth-Token`). Used by refresh script only. */
+    /** football-data.org API token (`X-Auth-Token`). Used by sync scripts and /api/internal/sync-scores. */
     FOOTBALL_DATA_API_TOKEN: z.string().optional(),
+    /** Bearer secret for cron-triggered score sync (`/api/internal/sync-scores`). */
+    SYNC_SCORES_SECRET: z.string().min(16),
     /**
      * Resend API key. Optional: when unset, invitation emails are skipped
      * (the action still creates `Invitation` rows; share the code/link manually).
@@ -39,6 +41,7 @@ export const env = createEnv({
     ALLOW_REMOTE_MIGRATION: process.env.ALLOW_REMOTE_MIGRATION,
     NODE_ENV: process.env.NODE_ENV,
     FOOTBALL_DATA_API_TOKEN: process.env.FOOTBALL_DATA_API_TOKEN,
+    SYNC_SCORES_SECRET: process.env.SYNC_SCORES_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     INVITE_FROM_EMAIL: process.env.INVITE_FROM_EMAIL,
     APP_BASE_URL: process.env.APP_BASE_URL ?? process.env.BETTER_AUTH_URL,

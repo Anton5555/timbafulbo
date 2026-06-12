@@ -76,6 +76,26 @@ export function parseFootballDataMatchStatus(
   }
 }
 
+/**
+ * True when a match should be treated as final in our DB: football-data reports
+ * FINISHED and both full-time scores are present (free tier may lag on scores).
+ */
+export function resolveMatchIsFinalFromApi(
+  status:
+    | FootballDataMatchStatus
+    | string
+    | null
+    | undefined,
+  homeScore: number | null | undefined,
+  awayScore: number | null | undefined,
+): boolean {
+  return (
+    isMatchFinishedStatus(status) &&
+    homeScore != null &&
+    awayScore != null
+  )
+}
+
 /** True only when football-data reports the match as finished (terminal result state). */
 export function isMatchFinishedStatus(
   status:
