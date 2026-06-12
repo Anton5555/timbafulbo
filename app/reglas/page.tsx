@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { auth } from "@/lib/auth"
+import { PREDICTION_LOCK_MINUTES_BEFORE } from "@/lib/prediction-window"
 
 const GITHUB_ISSUES_URL = "https://github.com/Anton5555/timbafulbo/issues"
 
@@ -124,8 +125,8 @@ export default async function ReglasPage() {
                 casino.
               </li>
               <li>
-                Los pronósticos se cierran cuando arranca el partido; después no
-                se editan.
+                Los pronósticos se cierran {PREDICTION_LOCK_MINUTES_BEFORE}{" "}
+                minutos antes de que arranque el partido; después no se editan.
               </li>
             </ul>
           </RulesSection>

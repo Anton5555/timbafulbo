@@ -22,6 +22,10 @@ import { TeamEmblem } from "@/components/team-emblem"
 import { isKnockoutStage } from "@/lib/knockout-stage"
 import { isMatchLiveStatus } from "@/lib/match-status"
 import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
+import {
+  getPredictionCloseTime,
+  PREDICTION_LOCK_MINUTES_BEFORE,
+} from "@/lib/prediction-window"
 import { cn } from "@/lib/utils"
 
 import type { MatchesTabMatch, MatchesTabTeam } from "./types"
@@ -31,6 +35,12 @@ const DEBOUNCE_MS = 2000
 const RESULT_DELAY_MS = 2 * 60 * 60 * 1000
 const SCORE_MIN = 0
 const SCORE_MAX = 30
+
+const predictionCloseTimeFmt = new Intl.DateTimeFormat("es", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+})
 
 function clampScore(n: number): number {
   return Math.max(SCORE_MIN, Math.min(SCORE_MAX, n))
@@ -562,6 +572,10 @@ export function MatchPredictionTicket({
   }, [match.id, tournamentId, applyToAllTournaments])
 
   const start = new Date(match.startTime)
+  const predictionCloseTime = getPredictionCloseTime(start)
+  const predictionCloseTimeLabel = predictionCloseTimeFmt.format(
+    predictionCloseTime,
+  )
   const isLive =
     match.status != null
       ? isMatchLiveStatus(match.status)
@@ -649,17 +663,24 @@ export function MatchPredictionTicket({
             <span className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase sm:text-[10px]">
               {showLiquidation ? "Liquidación" : "Tu pronóstico"}
             </span>
-            {saving ? (
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-primary">
-                <SoccerBallIcon
-                  className="size-4 shrink-0 text-primary motion-safe:animate-spin"
-                  weight="duotone"
-                  aria-hidden
-                />
-                <span className="sr-only">Guardando pronóstico</span>
-                <span aria-hidden>Guardando…</span>
-              </span>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              {match.predictionOpen ? (
+                <span className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase sm:text-[10px]">
+                  Cierra {predictionCloseTimeLabel}
+                </span>
+              ) : null}
+              {saving ? (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-primary">
+                  <SoccerBallIcon
+                    className="size-4 shrink-0 text-primary motion-safe:animate-spin"
+                    weight="duotone"
+                    aria-hidden
+                  />
+                  <span className="sr-only">Guardando pronóstico</span>
+                  <span aria-hidden>Guardando…</span>
+                </span>
+              ) : null}
+            </div>
           </div>
 
           {match.predictionOpen ? (
@@ -881,7 +902,9 @@ export function MatchPredictionTicket({
                 </p>
               )}
               <p className="mt-1 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
-                Predicciones cerradas
+                {!isLive && !match.isFinal
+                  ? `Pronósticos cerrados (${PREDICTION_LOCK_MINUTES_BEFORE} min antes del partido)`
+                  : "Predicciones cerradas"}
               </p>
             </div>
           )}
