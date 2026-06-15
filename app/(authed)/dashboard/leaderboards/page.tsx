@@ -68,6 +68,7 @@ export default async function DashboardLeaderboardsPage({
             leaderboardsByTournamentId={leaderboardsByTournamentId}
             winnerByTournamentId={winnerByTournamentId}
             rulesByTournamentId={rulesByTournamentId}
+            currentUserId={userId}
           />
         </DashboardTabs>
       </Suspense>

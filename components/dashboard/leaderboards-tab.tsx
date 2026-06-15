@@ -36,11 +36,13 @@ export function LeaderboardsTab({
   leaderboardsByTournamentId,
   winnerByTournamentId,
   rulesByTournamentId,
+  currentUserId,
 }: {
   tournaments: { id: string; name: string }[]
   leaderboardsByTournamentId: Record<string, LeaderboardRow[]>
   winnerByTournamentId: Record<string, TournamentWinner>
   rulesByTournamentId: Record<string, TournamentRules>
+  currentUserId: string
 }) {
   const [tournamentId, setTournamentId] = useQueryState(
     "tournament",
@@ -151,13 +153,20 @@ export function LeaderboardsTab({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => (
+              {rows.map((row, index) => {
+                const isCurrentUser = row.userId === currentUserId
+                const isWinner =
+                  winnerData.isComplete && winnerUserIds.has(row.userId)
+
+                return (
                 <tr
                   key={row.userId}
                   className={
-                    winnerData.isComplete && winnerUserIds.has(row.userId)
-                      ? "border-b border-border/80 bg-primary/15 hover:bg-primary/25"
-                      : "border-b border-border/80 odd:bg-muted/15 hover:bg-muted/35"
+                    isCurrentUser
+                      ? "border-b border-primary/50 bg-primary/10 hover:bg-primary/20"
+                      : isWinner
+                        ? "border-b border-border/80 bg-primary/15 hover:bg-primary/25"
+                        : "border-b border-border/80 odd:bg-muted/15 hover:bg-muted/35"
                   }
                 >
                   <td className="px-3 py-2.5 font-bold tabular-nums sm:px-4">
@@ -170,7 +179,8 @@ export function LeaderboardsTab({
                     {row.points}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
