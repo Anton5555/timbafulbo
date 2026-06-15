@@ -5,27 +5,28 @@ import {
   redirectToDefaultTournamentIfInvalid,
   requireAuthenticatedDashboardUser,
 } from "@/app/(authed)/dashboard/_lib/dashboard-page-context"
-import { DashboardPageHero } from "@/components/dashboard/dashboard-page-hero"
-import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
 import { MyLeaguesTab } from "@/components/dashboard/my-leagues-tab"
+import { LeaguesTabSkeleton } from "@/components/dashboard/skeletons"
 import { env } from "@/env"
 import { getMyTournaments, getTournamentWinner } from "@/lib/dashboard-data"
+
 export const dynamic = "force-dynamic"
 
-export default async function DashboardLeaguesPage({
-  searchParams,
+async function LeaguesContent({
+  tournament,
+  matchFilter,
 }: {
-  searchParams: Promise<{ tournament?: string; matchFilter?: string }>
+  tournament?: string
+  matchFilter?: string
 }) {
   const { userId, userEmail } = await requireAuthenticatedDashboardUser()
-  const sp = await searchParams
   const tournaments = await loadUserTournaments(userId)
 
   redirectToDefaultTournamentIfInvalid({
     tab: "leagues",
     tournaments,
-    requestedTournamentId: sp.tournament,
-    preserveMatchFilter: sp.matchFilter,
+    requestedTournamentId: tournament,
+    preserveMatchFilter: matchFilter,
   })
 
   const myLeagues = await getMyTournaments(userId)
@@ -39,25 +40,28 @@ export default async function DashboardLeaguesPage({
   const winnerByTournamentId = Object.fromEntries(winnerEntries)
 
   return (
-    <div className="flex flex-col gap-8">
-      <DashboardPageHero />
+    <MyLeaguesTab
+      leagues={myLeagues}
+      winnerByTournamentId={winnerByTournamentId}
+      currentUserEmail={userEmail}
+      inviteFromEmail={env.INVITE_FROM_EMAIL}
+    />
+  )
+}
 
-      <Suspense
-        fallback={
-          <div className="flex flex-col gap-6" aria-hidden>
-            <div className="mb-1 h-10 w-full animate-pulse rounded-none border-b border-border bg-muted/20" />
-          </div>
-        }
-      >
-        <DashboardTabs>
-          <MyLeaguesTab
-            leagues={myLeagues}
-            winnerByTournamentId={winnerByTournamentId}
-            currentUserEmail={userEmail}
-            inviteFromEmail={env.INVITE_FROM_EMAIL}
-          />
-        </DashboardTabs>
-      </Suspense>
-    </div>
+export default async function DashboardLeaguesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tournament?: string; matchFilter?: string }>
+}) {
+  const sp = await searchParams
+
+  return (
+    <Suspense fallback={<LeaguesTabSkeleton />}>
+      <LeaguesContent
+        tournament={sp.tournament}
+        matchFilter={sp.matchFilter}
+      />
+    </Suspense>
   )
 }

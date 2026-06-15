@@ -130,3 +130,12 @@
     @apply font-mono;
     }
 }
+
+@keyframes dashboard-route-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
