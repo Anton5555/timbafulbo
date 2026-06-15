@@ -54,8 +54,20 @@ assert.match(
 
 assert.match(
   ticketSource,
-  /value === null \? "—" : value/,
-  "unset prediction scores should render as an em dash",
+  /value === null \? \([\s\S]*?onClick=\{onArm\}[\s\S]*?—/,
+  "unset prediction scores should render as a tappable em dash that arms 0-0",
+)
+
+assert.match(
+  ticketSource,
+  /function armScores\(\) \{[\s\S]*?markTouched\(\)[\s\S]*?commitScoresChange\(0, 0\)/,
+  "tapping the ghosted dash should arm both sides at 0-0 and mark the prediction as touched",
+)
+
+assert.match(
+  ticketSource,
+  /onArm=\{armScores\}/,
+  "score steppers should wire tap-to-arm for 0-0 predictions",
 )
 
 assert.match(

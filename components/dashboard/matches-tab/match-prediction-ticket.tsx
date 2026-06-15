@@ -218,12 +218,14 @@ function ScoreStepper({
   value,
   isGhosted,
   onStep,
+  onArm,
   disabled,
   label,
 }: {
   value: number | null
   isGhosted: boolean
   onStep: (delta: -1 | 1) => void
+  onArm: () => void
   disabled: boolean
   label: string
 }) {
@@ -251,14 +253,29 @@ function ScoreStepper({
       >
         −
       </Button>
-      <span
-        className={cn(
-          "min-w-6 text-center font-black tabular-nums sm:min-w-8 sm:text-lg",
-          isGhosted ? "text-muted-foreground/60" : "text-foreground",
-        )}
-      >
-        {value === null ? "—" : value}
-      </span>
+      {value === null ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onArm}
+          className={cn(
+            "min-w-6 text-center font-black tabular-nums underline decoration-dashed decoration-muted-foreground/50 underline-offset-4 transition-colors sm:min-w-8 sm:text-lg",
+            "text-muted-foreground/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-50",
+          )}
+          aria-label={`Empezar tu pronóstico en 0 (${label})`}
+        >
+          —
+        </button>
+      ) : (
+        <span
+          className={cn(
+            "min-w-6 text-center font-black tabular-nums sm:min-w-8 sm:text-lg",
+            isGhosted ? "text-muted-foreground/60" : "text-foreground",
+          )}
+        >
+          {value}
+        </span>
+      )}
       <Button
         type="button"
         variant="outline"
@@ -478,6 +495,12 @@ export function MatchPredictionTicket({
     }
 
     commitScoresChange(nextHome, nextAway)
+  }
+
+  function armScores() {
+    if (!predictionOpen) return
+    markTouched()
+    commitScoresChange(0, 0)
   }
 
   function commitScoresChange(nextHome: number, nextAway: number) {
@@ -720,6 +743,7 @@ export function MatchPredictionTicket({
                   disabled={saving}
                   label="goles local"
                   onStep={(delta) => applyScoreStep("home", delta)}
+                  onArm={armScores}
                 />
                 <span className="font-black text-muted-foreground">—</span>
                 <ScoreStepper
@@ -728,6 +752,7 @@ export function MatchPredictionTicket({
                   disabled={saving}
                   label="goles visitante"
                   onStep={(delta) => applyScoreStep("away", delta)}
+                  onArm={armScores}
                 />
               </div>
               {showPenaltyPick ? (
