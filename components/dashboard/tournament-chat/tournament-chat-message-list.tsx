@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { deleteTournamentChatMessage } from "@/app/(authed)/dashboard/chat/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { SkeletonLine } from "@/components/dashboard/skeletons/primitives"
 import { shouldShowChatMessageHeader } from "@/lib/tournament-chat-grouping"
 import type { TournamentChatMessageRow } from "@/lib/tournament-chat-data"
 import { cn } from "@/lib/utils"
@@ -26,12 +27,48 @@ function formatMessageTime(iso: string): string {
   }).format(new Date(iso))
 }
 
+const MESSAGE_LIST_SHELL =
+  "flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3"
+
+function ChatMessagesSkeleton() {
+  return (
+    <div
+      className={MESSAGE_LIST_SHELL}
+      aria-busy="true"
+      aria-label="Cargando mensajes"
+    >
+      <div className="mt-auto flex flex-col gap-2">
+        <div className="flex gap-2">
+          <SkeletonLine className="size-8 shrink-0" />
+          <div className="min-w-0 max-w-[75%] space-y-1">
+            <SkeletonLine className="h-2.5 w-16" />
+            <SkeletonLine className="h-8 w-full max-w-36" />
+          </div>
+        </div>
+        <div className="flex flex-row-reverse gap-2">
+          <SkeletonLine className="size-8 shrink-0" />
+          <div className="min-w-0 max-w-[75%] space-y-1">
+            <SkeletonLine className="ml-auto h-2.5 w-10" />
+            <SkeletonLine className="h-7 w-full max-w-28" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <SkeletonLine className="size-8 shrink-0" />
+          <SkeletonLine className="h-7 w-full max-w-32" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function TournamentChatMessageList({
   messages,
   onDeleted,
+  loading = false,
 }: {
   messages: TournamentChatMessageRow[]
   onDeleted: (messageId: string) => void
+  loading?: boolean
 }) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevCountRef = useRef(messages.length)
@@ -43,9 +80,18 @@ export function TournamentChatMessageList({
     prevCountRef.current = messages.length
   }, [messages.length])
 
+  if (loading && messages.length === 0) {
+    return <ChatMessagesSkeleton />
+  }
+
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center px-4 py-10 text-center">
+      <div
+        className={cn(
+          MESSAGE_LIST_SHELL,
+          "items-center justify-center text-center"
+        )}
+      >
         <p className="text-sm text-muted-foreground">
           Todavía no hay mensajes. Sé el primero en escribir.
         </p>
@@ -54,7 +100,7 @@ export function TournamentChatMessageList({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3">
+    <div className={MESSAGE_LIST_SHELL}>
       {messages.map((message, index) => {
         const showHeader = shouldShowChatMessageHeader(messages, index)
         return (

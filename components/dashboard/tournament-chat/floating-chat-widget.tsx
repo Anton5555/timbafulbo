@@ -58,7 +58,7 @@ export function FloatingChatWidget({
             tournaments={tournaments}
             initialMessages={initialMessages}
             showTournamentFilter
-            panelClassName="min-h-[18rem] max-h-[min(28rem,60vh)] border-0"
+            panelClassName="h-[min(26rem,58vh)] min-h-0 border-0"
           />
         </div>
       ) : null}

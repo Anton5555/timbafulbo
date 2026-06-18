@@ -18,12 +18,14 @@ export function TournamentChatPanel({
   tournamentName,
   messages,
   onMessagesChange,
+  loading = false,
   className,
 }: {
   tournamentId: string
   tournamentName: string
   messages: TournamentChatMessageRow[]
   onMessagesChange: Dispatch<SetStateAction<TournamentChatMessageRow[]>>
+  loading?: boolean
   className?: string
 }) {
   const handleStreamEvent = useCallback(
@@ -92,6 +94,7 @@ export function TournamentChatPanel({
       <TournamentChatMessageList
         messages={messages}
         onDeleted={handleDeleted}
+        loading={loading}
       />
 
       <TournamentChatComposer

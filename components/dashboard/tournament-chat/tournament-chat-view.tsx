@@ -84,7 +84,11 @@ export function TournamentChatView({
           tournamentName={activeTournament.name}
           messages={messages}
           onMessagesChange={setMessages}
-          className={cn(loading && "opacity-60", panelClassName)}
+          loading={loading}
+          className={cn(
+            loading && messages.length > 0 && "opacity-60",
+            panelClassName
+          )}
         />
       ) : (
         <div className="border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
