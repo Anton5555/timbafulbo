@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
 
 import {
@@ -9,6 +10,10 @@ import { MyLeaguesTab } from "@/components/dashboard/my-leagues-tab"
 import { LeaguesTabSkeleton } from "@/components/dashboard/skeletons"
 import { env } from "@/env"
 import { getMyTournaments, getTournamentWinner } from "@/lib/dashboard-data"
+
+export const metadata: Metadata = {
+  title: "Mis ligas",
+}
 
 export const dynamic = "force-dynamic"
 

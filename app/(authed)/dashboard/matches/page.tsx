@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
@@ -15,6 +16,10 @@ import {
   getDashboardMatchesWithPredictions,
 } from "@/lib/dashboard-data"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
+
+export const metadata: Metadata = {
+  title: "Partidos",
+}
 
 export const dynamic = "force-dynamic"
 

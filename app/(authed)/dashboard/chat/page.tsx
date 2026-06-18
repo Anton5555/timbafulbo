@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
 
 import {
@@ -8,6 +9,10 @@ import {
 import { ChatTabSkeleton } from "@/components/dashboard/skeletons"
 import { TournamentChatView } from "@/components/dashboard/tournament-chat/tournament-chat-view"
 import { getTournamentChatMessagesForUser } from "@/lib/tournament-chat-data"
+
+export const metadata: Metadata = {
+  title: "Chat",
+}
 
 export const dynamic = "force-dynamic"
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
 
 import {
@@ -12,6 +13,10 @@ import {
   getTournamentRulesByIds,
   getTournamentWinner,
 } from "@/lib/dashboard-data"
+
+export const metadata: Metadata = {
+  title: "Clasificaciones",
+}
 
 export const dynamic = "force-dynamic"
 

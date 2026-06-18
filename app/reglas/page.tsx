@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import { headers } from "next/headers"
 import Link from "next/link"
@@ -7,6 +8,10 @@ import { auth } from "@/lib/auth"
 import { PREDICTION_LOCK_MINUTES_BEFORE } from "@/lib/prediction-window"
 
 const GITHUB_ISSUES_URL = "https://github.com/Anton5555/timbafulbo/issues"
+
+export const metadata: Metadata = {
+  title: "Reglas",
+}
 
 export const dynamic = "force-dynamic"
 

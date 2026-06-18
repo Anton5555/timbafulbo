@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
@@ -7,6 +8,10 @@ import type { JoinInvitationView } from "@/app/join/[token]/join-invitation-clie
 import { auth } from "@/lib/auth"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
 import { prisma } from "@/lib/prisma"
+
+export const metadata: Metadata = {
+  title: "Invitación",
+}
 
 export default async function JoinInvitationPage({
   params,
