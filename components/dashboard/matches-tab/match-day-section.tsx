@@ -12,6 +12,7 @@ export function MatchDaySection({
   groupKey,
   headingLabel,
   matches,
+  allMatches,
   referenceTimeMs,
   tournamentId,
   predictionsEnabled,
@@ -20,6 +21,7 @@ export function MatchDaySection({
   groupKey: string
   headingLabel: string
   matches: MatchesTabMatch[]
+  allMatches: MatchesTabMatch[]
   referenceTimeMs: number
   tournamentId: string
   predictionsEnabled: boolean
@@ -59,8 +61,9 @@ export function MatchDaySection({
         <div className="grid grid-cols-1 items-start gap-3 px-3 lg:grid-cols-2">
           {matches.map((match) => (
             <MatchPredictionTicket
-              key={`${tournamentId}-${match.id}-${match.userPrediction?.homeScore ?? "x"}-${match.userPrediction?.awayScore ?? "x"}-${match.userPrediction?.penaltyWinner ?? "p"}-${match.predictionOpen}-${match.userPredictionResult?.kind ?? "n"}-${match.userPredictionResult?.points ?? "n"}`}
+              key={`${tournamentId}-${match.id}`}
               match={match}
+              allMatches={allMatches}
               tournamentId={tournamentId}
               referenceTimeMs={referenceTimeMs}
               predictionsEnabled={predictionsEnabled}

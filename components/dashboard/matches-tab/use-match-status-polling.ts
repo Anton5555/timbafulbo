@@ -216,7 +216,7 @@ export function matchStatusPollingResetKey(
   return matches
     .map(
       (m) =>
-        `${m.id}:${m.isFinal}:${m.homeScore ?? ""}:${m.awayScore ?? ""}:${m.predictionOpen}:${m.userPrediction?.homeScore ?? ""}:${m.userPrediction?.awayScore ?? ""}`,
+        `${m.id}:${m.isFinal}:${m.homeScore ?? ""}:${m.awayScore ?? ""}:${m.predictionOpen}`,
     )
     .join("|")
 }

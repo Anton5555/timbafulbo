@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useTransition,
@@ -30,8 +31,10 @@ import {
   getPredictionCloseTime,
   PREDICTION_LOCK_MINUTES_BEFORE,
 } from "@/lib/prediction-window"
+import { getTeamResultsHistory } from "@/lib/team-results-history"
 import { cn } from "@/lib/utils"
 
+import { TeamHistoryTooltipContent } from "./team-history-tooltip"
 import type { MatchesTabMatch, MatchesTabTeam } from "./types"
 
 /** Long enough to set local + visitante (and penalties) without mid-edit saves. */
@@ -110,27 +113,43 @@ function MatchTicketTeamColumn({
   team,
   paddingClass,
   dimmed,
+  allMatches,
+  beforeStartTime,
 }: {
   team: MatchesTabTeam
   paddingClass: string
   dimmed?: boolean
+  allMatches: MatchesTabMatch[]
+  beforeStartTime: string
 }) {
+  const [open, setOpen] = useState(false)
+  const history = useMemo(() => {
+    if (!open) return []
+    return getTeamResultsHistory(team.code, allMatches, beforeStartTime)
+  }, [open, team.code, allMatches, beforeStartTime])
+
   return (
-    <div
-      className={cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center py-2 transition-opacity",
-        paddingClass,
-        dimmed && "opacity-40 grayscale-[0.45]",
-      )}
-    >
-      <TeamEmblem name={team.name} code={team.code} size="sm" />
-      <span
-        className="mt-2 w-full min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-tighter sm:text-xs"
-        title={team.name}
-      >
-        {team.name}
-      </span>
-    </div>
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "flex min-w-0 flex-1 cursor-default flex-col items-center justify-center border-0 bg-transparent py-2 text-inherit transition-opacity",
+            paddingClass,
+            dimmed && "opacity-40 grayscale-[0.45]",
+          )}
+          aria-label={`Ver resultados previos de ${team.name}`}
+        >
+          <TeamEmblem name={team.name} code={team.code} size="sm" />
+          <span className="mt-2 w-full min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-tighter sm:text-xs">
+            {team.name}
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-72 p-0 text-left">
+        <TeamHistoryTooltipContent teamName={team.name} history={history} />
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -304,12 +323,14 @@ function liquidationOutcomeLabel(kind: "exact" | "result" | "miss"): string {
 
 export function MatchPredictionTicket({
   match,
+  allMatches,
   tournamentId,
   referenceTimeMs,
   predictionsEnabled,
   applyToAllTournaments,
 }: {
   match: MatchesTabMatch
+  allMatches: MatchesTabMatch[]
   tournamentId: string
   referenceTimeMs: number
   predictionsEnabled: boolean
@@ -693,6 +714,8 @@ export function MatchPredictionTicket({
           team={match.homeTeam}
           paddingClass="pr-2 pl-5"
           dimmed={homeDimmed}
+          allMatches={allMatches}
+          beforeStartTime={match.startTime}
         />
         <MatchTicketCenter
           match={match}
@@ -705,6 +728,8 @@ export function MatchPredictionTicket({
           team={match.awayTeam}
           paddingClass="pr-5 pl-2"
           dimmed={awayDimmed}
+          allMatches={allMatches}
+          beforeStartTime={match.startTime}
         />
       </div>
 

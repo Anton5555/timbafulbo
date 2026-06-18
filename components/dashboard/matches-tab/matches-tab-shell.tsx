@@ -91,6 +91,7 @@ function MatchesTabMatchList({
           groupKey={key}
           headingLabel={label}
           matches={groupMatches}
+          allMatches={displayMatches}
           referenceTimeMs={referenceTimeMs}
           tournamentId={tournamentId}
           predictionsEnabled={predictionsEnabled}
