@@ -1,3 +1,7 @@
+"use client"
+
+import { useTranslations } from "next-intl"
+
 import {
   AccordionContent,
   AccordionItem,
@@ -27,8 +31,12 @@ export function MatchDaySection({
   predictionsEnabled: boolean
   applyToAllTournaments: boolean
 }) {
+  const t = useTranslations("matches")
+
   const matchCountLabel =
-    matches.length === 1 ? "1 partido" : `${matches.length} partidos`
+    matches.length === 1
+      ? t("oneMatch")
+      : t("matchCount", { count: matches.length })
 
   return (
     <AccordionItem

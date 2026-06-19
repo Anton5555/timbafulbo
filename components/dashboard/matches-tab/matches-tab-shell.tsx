@@ -3,6 +3,7 @@
 import { PlusIcon } from "@phosphor-icons/react"
 import { useQueryState } from "nuqs"
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { CreateTournamentTrigger } from "@/components/dashboard/create-tournament/create-tournament-trigger"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { dashboardTournamentParser } from "@/components/dashboard/tournament-search-params"
 import { dashboardMatchFilterParser } from "@/components/dashboard/matches-tab/match-filter-search-params"
+import { useMatchLabels } from "@/hooks/use-match-labels"
 import { cn } from "@/lib/utils"
 
 import {
@@ -54,6 +56,9 @@ function MatchesTabMatchList({
   tournamentId: string
   applyToAllTournaments: boolean
 }) {
+  const { dateHeadingFmt, stageLabel } = useMatchLabels()
+  const t = useTranslations("matches")
+
   const { displayMatches, referenceTimeMs } = useMatchStatusPolling({
     matches,
     tournamentId,
@@ -65,15 +70,15 @@ function MatchesTabMatchList({
     : displayMatches
   const grouped =
     predictionsEnabled && activeFilter === "finished"
-      ? groupMatchesByStage(filtered)
-      : groupMatchesByLocalDay(filtered)
+      ? groupMatchesByStage(filtered, (stage) => stageLabel(stage))
+      : groupMatchesByLocalDay(filtered, dateHeadingFmt)
   const defaultOpenGroups = grouped.map((g) => g.key)
 
   if (filtered.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/10 px-4 py-12 text-center">
         <p className="text-sm font-medium text-muted-foreground">
-          No hay partidos en esta vista.
+          {t("noMatchesInView")}
         </p>
       </div>
     )
@@ -115,6 +120,9 @@ export function MatchesTabShell({
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
+  const t = useTranslations("matches")
+  const tCommon = useTranslations("common")
+
   const [tournamentId, setTournamentId] = useQueryState(
     "tournament",
     dashboardTournamentParser.withOptions({
@@ -147,14 +155,14 @@ export function MatchesTabShell({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 space-y-2">
             <h2 className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-              Tus pronósticos
+              {t("yourPredictions")}
             </h2>
             {predictionsEnabled ? (
               <div className="flex flex-wrap gap-2">
                 {(
                   [
-                    ["pending", "Pendientes"],
-                    ["finished", "Finalizados"],
+                    ["pending", t("pending")],
+                    ["finished", t("finished")],
                   ] as const
                 ).map(([key, label]) => {
                   const active = activeFilter === key
@@ -181,7 +189,7 @@ export function MatchesTabShell({
           </div>
           {showTournamentScopedProgress ? (
             <p className="shrink-0 text-[10px] font-black tracking-widest text-foreground uppercase tabular-nums sm:text-xs">
-              Completado: {completed}/{total}
+              {t("completed", { completed, total })}
             </p>
           ) : null}
         </div>
@@ -202,19 +210,18 @@ export function MatchesTabShell({
                       htmlFor="apply-all-tournaments"
                       className="cursor-pointer text-[10px] font-bold tracking-widest uppercase"
                     >
-                      Guardar en todas mis ligas
+                      {t("saveToAllLeagues")}
                     </Label>
                   </div>
                   <p className="text-[9px] leading-snug font-medium tracking-wide text-muted-foreground">
-                    Activado: tus predicciones se guardarán en todas tus ligas,
-                    sobrescribiendo las anteriores.
+                    {t("saveToAllLeaguesHint")}
                   </p>
                 </div>
               ) : null}
               {!effectiveApplyToAllTournaments ? (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <span className="shrink-0 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                    Liga
+                    {tCommon("league")}
                   </span>
                   <div className="flex w-full max-w-md min-w-0 items-center gap-2 sm:w-auto">
                     <Select
@@ -227,12 +234,12 @@ export function MatchesTabShell({
                         size="sm"
                         className="min-w-0 flex-1 rounded-none border-border bg-background font-bold sm:w-72"
                       >
-                        <SelectValue placeholder="Elegí una liga" />
+                        <SelectValue placeholder={tCommon("selectLeague")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {tournaments.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>
-                            {t.name}
+                        {tournaments.map((tournament) => (
+                          <SelectItem key={tournament.id} value={tournament.id}>
+                            {tournament.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -246,8 +253,8 @@ export function MatchesTabShell({
                         variant="outline"
                         size="icon-sm"
                         className="shrink-0 rounded-none border-dashed border-primary/40"
-                        aria-label="Crear torneo"
-                        title="Crear torneo"
+                        aria-label={tCommon("createTournament")}
+                        title={tCommon("createTournament")}
                       >
                         <PlusIcon
                           className="text-primary"
@@ -263,7 +270,7 @@ export function MatchesTabShell({
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Fixture del torneo
+                {t("tournamentFixture")}
               </p>
               <CreateTournamentTrigger
                 currentUserEmail={currentUserEmail}
@@ -274,8 +281,8 @@ export function MatchesTabShell({
                   variant="outline"
                   size="icon-sm"
                   className="shrink-0 rounded-none border-dashed border-primary/40"
-                  aria-label="Crear torneo"
-                  title="Crear torneo"
+                  aria-label={tCommon("createTournament")}
+                  title={tCommon("createTournament")}
                 >
                   <PlusIcon
                     className="text-primary"
@@ -292,7 +299,7 @@ export function MatchesTabShell({
       {predictionsEnabled ? (
         <div className="flex flex-col gap-2">
           <p className="text-[10px] leading-relaxed font-bold tracking-widest text-muted-foreground uppercase">
-            Cambiá el resultado y se guarda solo, incluso si querés guardar 0-0.
+            {t("autoSaveHint")}
           </p>
         </div>
       ) : null}

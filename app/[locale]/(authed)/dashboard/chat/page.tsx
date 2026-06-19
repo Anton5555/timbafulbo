@@ -1,17 +1,19 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
+import { getTranslations } from "next-intl/server"
 
 import {
   loadUserTournaments,
   redirectToDefaultTournamentIfInvalid,
   requireAuthenticatedDashboardUser,
-} from "@/app/(authed)/dashboard/_lib/dashboard-page-context"
+} from "@/app/[locale]/(authed)/dashboard/_lib/dashboard-page-context"
 import { ChatTabSkeleton } from "@/components/dashboard/skeletons"
 import { TournamentChatView } from "@/components/dashboard/tournament-chat/tournament-chat-view"
 import { getTournamentChatMessagesForUser } from "@/lib/tournament-chat-data"
 
-export const metadata: Metadata = {
-  title: "Chat",
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("nav")
+  return { title: t("chat") }
 }
 
 export const dynamic = "force-dynamic"
@@ -26,7 +28,7 @@ async function ChatContent({
   const { userId } = await requireAuthenticatedDashboardUser()
   const tournaments = await loadUserTournaments(userId)
 
-  const tournamentId = redirectToDefaultTournamentIfInvalid({
+  const tournamentId = await redirectToDefaultTournamentIfInvalid({
     tab: "chat",
     tournaments,
     requestedTournamentId: tournament,

@@ -9,15 +9,15 @@ import {
   TrashIcon,
   TrophyIcon,
 } from "@phosphor-icons/react"
-import { useRouter } from "next/navigation"
+import { useLocale, useTranslations } from "next-intl"
 import { useOptimistic, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { copyPredictionsFromLeague } from "@/app/(authed)/dashboard/prediction-actions"
+import { copyPredictionsFromLeague } from "@/app/[locale]/(authed)/dashboard/prediction-actions"
 import {
   deleteTournament,
   joinTournamentByInviteCode,
-} from "@/app/(authed)/dashboard/tournament-actions"
+} from "@/app/[locale]/(authed)/dashboard/tournament-actions"
 import { CreateTournamentResponsiveShell } from "@/components/dashboard/create-tournament/responsive-shell"
 import { TournamentRulesSummary } from "@/components/dashboard/tournament-rules-summary"
 import { CreateTournamentTrigger } from "@/components/dashboard/create-tournament/create-tournament-trigger"
@@ -48,28 +48,35 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useIsDesktopSm } from "@/hooks/use-media-query"
+import { useRouter } from "@/i18n/routing"
+import { routing } from "@/i18n/routing"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
 import { buildTournamentInvitePath } from "@/lib/invite-url"
 
 import type { MyTournamentRow, TournamentWinner } from "@/lib/dashboard-data"
 
-function formatLeagueWinnerBadge(winner: TournamentWinner): string | null {
+type LeaguesT = ReturnType<typeof useTranslations<"leagues">>
+
+function formatLeagueWinnerBadge(
+  winner: TournamentWinner,
+  t: LeaguesT,
+): string | null {
   if (!winner.isComplete || winner.winners.length === 0) return null
 
   if (winner.winners.length === 1) {
-    return `Finalizado — Ganador: ${winner.winners[0].displayName}`
+    return t("winnerFinished", { name: winner.winners[0].displayName })
   }
 
   const names = winner.winners.map((w) => w.displayName).join(", ")
-  return `Finalizado — Empate: ${names}`
+  return t("winnerTie", { names })
 }
 
-function roleLabel(role: MyTournamentRow["role"]): string {
+function roleLabel(role: MyTournamentRow["role"], t: LeaguesT): string {
   switch (role) {
     case "ADMIN":
-      return "Administrador"
+      return t("roleAdmin")
     case "MEMBER":
-      return "Miembro"
+      return t("roleMember")
     default:
       return role
   }
@@ -88,6 +95,8 @@ function CopyPredictionsFromLeagueDialog({
   onOpenChange: (open: boolean) => void
   onCopied: () => void
 }) {
+  const t = useTranslations("leagues")
+  const tCommon = useTranslations("common")
   const [sourceId, setSourceId] = useState(() => sourceLeagues[0]?.id ?? "")
   const [busy, setBusy] = useState(false)
 
@@ -96,7 +105,7 @@ function CopyPredictionsFromLeagueDialog({
 
   async function handleCopy() {
     if (!effectiveSourceId) {
-      toast.error("Elegí una liga de origen.")
+      toast.error(t("toastPickSource"))
       return
     }
 
@@ -114,15 +123,15 @@ function CopyPredictionsFromLeagueDialog({
 
     const parts: string[] = []
     if (res.copied > 0) {
-      parts.push(`Copiados ${res.copied}`)
+      parts.push(t("toastCopied", { count: res.copied }))
     } else {
-      parts.push("Sin partidos abiertos para copiar")
+      parts.push(t("toastNoOpenMatches"))
     }
     if (res.skippedLocked > 0) {
-      parts.push(`Omitidos ${res.skippedLocked} (cerrados)`)
+      parts.push(t("toastSkipped", { count: res.skippedLocked }))
     }
     if (res.bonusCopied > 0) {
-      parts.push(`Bonus ${res.bonusCopied}`)
+      parts.push(t("toastBonus", { count: res.bonusCopied }))
     }
 
     toast.success(parts.join(" · "))
@@ -134,8 +143,8 @@ function CopyPredictionsFromLeagueDialog({
     <CreateTournamentResponsiveShell
       open={open}
       onOpenChange={onOpenChange}
-      title="Copiar pronósticos"
-      description={`Destino: ${targetLeague.name}`}
+      title={t("copyPredictions")}
+      description={t("destination", { name: targetLeague.name })}
       footer={
         <Button
           type="button"
@@ -151,10 +160,10 @@ function CopyPredictionsFromLeagueDialog({
                 weight="duotone"
                 aria-hidden
               />
-              Copiando…
+              {t("copying")}
             </>
           ) : (
-            "Copiar"
+            tCommon("copy")
           )}
         </Button>
       }
@@ -165,7 +174,7 @@ function CopyPredictionsFromLeagueDialog({
             htmlFor={`copy-source-${targetLeague.id}`}
             className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
           >
-            Copiar desde
+            {t("copyFrom")}
           </Label>
           <Select
             value={effectiveSourceId}
@@ -176,7 +185,7 @@ function CopyPredictionsFromLeagueDialog({
               id={`copy-source-${targetLeague.id}`}
               className="w-full rounded-none border-border bg-background font-bold"
             >
-              <SelectValue placeholder="Elegí una liga" />
+              <SelectValue placeholder={tCommon("selectLeague")} />
             </SelectTrigger>
             <SelectContent>
               {sourceLeagues.map((l) => (
@@ -190,8 +199,7 @@ function CopyPredictionsFromLeagueDialog({
 
         <div className="border border-dashed border-border bg-muted/20 px-3 py-3">
           <p className="border-l-2 border-primary pl-2 text-[10px] leading-relaxed font-bold tracking-wide text-muted-foreground uppercase">
-            <span className="text-primary">{">"}</span> Solo se copian partidos
-            aún abiertos. Sobrescribe pronósticos ya cargados en esta liga.
+            <span className="text-primary">{">"}</span> {t("copyRulesHint")}
           </p>
         </div>
       </div>
@@ -216,6 +224,9 @@ function LeagueCard({
   sourceLeagues: MyTournamentRow[]
   onPredictionsCopied: () => void
 }) {
+  const t = useTranslations("leagues")
+  const tCommon = useTranslations("common")
+  const locale = useLocale() as (typeof routing.locales)[number]
   const isDesktop = useIsDesktopSm()
   const [confirming, setConfirming] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -224,7 +235,7 @@ function LeagueCard({
   const [copyOpen, setCopyOpen] = useState(false)
 
   function getInviteUrl(): string {
-    const path = buildTournamentInvitePath(league.inviteCode)
+    const path = buildTournamentInvitePath(league.inviteCode, locale)
     return `${window.location.origin}${path}`
   }
 
@@ -242,11 +253,11 @@ function LeagueCard({
       const ok = await copyInviteUrl()
       if (ok) {
         setCopied(true)
-        toast.success("Link del torneo copiado.")
+        toast.success(t("toastTournamentLinkCopied"))
         window.setTimeout(() => setCopied(false), 2000)
         return
       }
-      toast.error("No se pudo copiar. Revisá los permisos del portapapeles.")
+      toast.error(t("toastCopyFailed"))
       return
     }
     setShareOpen(true)
@@ -257,25 +268,25 @@ function LeagueCard({
     const ok = await copyInviteUrl()
     setShareBusy(false)
     if (ok) {
-      toast.success("Link copiado.")
+      toast.success(t("toastLinkCopied"))
       setShareOpen(false)
       return
     }
-    toast.error("No se pudo copiar.")
+    toast.error(t("toastCopyError"))
   }
 
   async function handleDrawerNativeShare() {
     const url = getInviteUrl()
-    const title = `timbafulbo · ${league.name}`
-    const text = `Entrá al torneo «${league.name}» en timbafulbo.`
+    const title = t("shareTitle", { name: league.name })
+    const text = t("shareText", { name: league.name })
 
     if (typeof navigator.share !== "function") {
       const ok = await copyInviteUrl()
       if (ok) {
-        toast.success("Link copiado (compartir no disponible en este dispositivo).")
+        toast.success(t("toastShareFallback"))
         setShareOpen(false)
       } else {
-        toast.error("No se pudo compartir ni copiar.")
+        toast.error(t("toastShareFailed"))
       }
       return
     }
@@ -295,10 +306,10 @@ function LeagueCard({
       }
       const ok = await copyInviteUrl()
       if (ok) {
-        toast.success("Link copiado.")
+        toast.success(t("toastLinkCopied"))
         setShareOpen(false)
       } else {
-        toast.error("No se pudo compartir. Probá de nuevo.")
+        toast.error(t("toastShareRetry"))
       }
     } finally {
       setShareBusy(false)
@@ -310,7 +321,7 @@ function LeagueCard({
     onDeleteConfirmed()
   }
 
-  const winnerBadgeText = formatLeagueWinnerBadge(winner)
+  const winnerBadgeText = formatLeagueWinnerBadge(winner, t)
 
   return (
     <Card size="sm" className="border-border bg-card">
@@ -319,7 +330,7 @@ function LeagueCard({
           {league.name}
         </CardTitle>
         <CardDescription className="text-[10px] font-bold tracking-widest uppercase">
-          {roleLabel(league.role)}
+          {roleLabel(league.role, t)}
         </CardDescription>
         {winnerBadgeText ? (
           <div className="mt-2 flex items-start gap-2 border border-primary/30 bg-primary/10 px-2 py-1.5">
@@ -339,7 +350,7 @@ function LeagueCard({
 
         <div className="mt-3 flex flex-col gap-1">
           <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-            Código de invitación
+            {t("inviteCode")}
           </span>
           <code className="border border-border bg-muted/40 px-2 py-1.5 text-center text-sm font-bold tracking-wider uppercase tabular-nums">
             {league.inviteCode}
@@ -354,10 +365,10 @@ function LeagueCard({
               size="sm"
               className="w-full rounded-none font-black tracking-[0.15em] uppercase"
               onClick={() => setCopyOpen(true)}
-              aria-label={`Copiar pronósticos a ${league.name} desde otra liga`}
+              aria-label={t("copyPredictionsAria", { league: league.name })}
             >
               <CopySimpleIcon className="size-4" weight="duotone" aria-hidden />
-              Copiar pronósticos desde…
+              {t("copyPredictionsFrom")}
             </Button>
             <CopyPredictionsFromLeagueDialog
               targetLeague={league}
@@ -379,10 +390,10 @@ function LeagueCard({
               onClick={() => void handleSharePrimaryClick()}
               aria-label={
                 copied
-                  ? "Link copiado"
+                  ? t("linkCopied")
                   : isDesktop
-                    ? "Copiar link del torneo"
-                    : "Abrir opciones para compartir torneo"
+                    ? t("copyTournamentLink")
+                    : t("openShareOptions")
               }
             >
               {copied ? (
@@ -390,14 +401,14 @@ function LeagueCard({
               ) : (
                 <ShareNetworkIcon className="size-4" weight="duotone" aria-hidden />
               )}
-              {copied ? "Copiado" : "Compartir torneo"}
+              {copied ? tCommon("copied") : t("shareTournament")}
             </Button>
 
             <Drawer open={shareOpen} onOpenChange={setShareOpen}>
               <DrawerContent className="rounded-none border-border bg-background">
                 <DrawerHeader className="text-left">
                   <DrawerTitle className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-                    Compartir torneo
+                    {t("shareTournamentTitle")}
                   </DrawerTitle>
                   <DrawerDescription className="text-xs font-normal normal-case">
                     {league.name} · {league.inviteCode}
@@ -411,7 +422,7 @@ function LeagueCard({
                     disabled={shareBusy}
                     onClick={() => void handleDrawerCopyLink()}
                   >
-                    Copiar link
+                    {t("copyLink")}
                   </Button>
                   <Button
                     type="button"
@@ -420,7 +431,7 @@ function LeagueCard({
                     disabled={shareBusy}
                     onClick={() => void handleDrawerNativeShare()}
                   >
-                    Compartir…
+                    {t("share")}
                   </Button>
                   <DrawerClose asChild>
                     <Button
@@ -428,7 +439,7 @@ function LeagueCard({
                       variant="outline"
                       className="w-full rounded-none font-black tracking-[0.15em] uppercase"
                     >
-                      Cerrar
+                      {tCommon("close")}
                     </Button>
                   </DrawerClose>
                 </DrawerFooter>
@@ -448,7 +459,7 @@ function LeagueCard({
             {confirming ? (
               <div className="space-y-3">
                 <p className="text-[10px] font-bold leading-relaxed tracking-wide text-muted-foreground uppercase">
-                  Se van a borrar invitaciones, predicciones, puntajes y todos los miembros de esta liga. Esta acción no se puede deshacer.
+                  {t("deleteWarning")}
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                   <Button
@@ -459,7 +470,7 @@ function LeagueCard({
                     className="rounded-none font-black tracking-[0.15em] uppercase"
                     onClick={() => setConfirming(false)}
                   >
-                    Cancelar
+                    {tCommon("cancel")}
                   </Button>
                   <Button
                     type="button"
@@ -469,7 +480,7 @@ function LeagueCard({
                     className="rounded-none font-black tracking-[0.15em] uppercase"
                     onClick={() => void onConfirmDelete()}
                   >
-                    {deletePending ? "Eliminando…" : "Eliminar definitivamente"}
+                    {deletePending ? t("deleting") : t("deleteConfirm")}
                   </Button>
                 </div>
               </div>
@@ -480,10 +491,10 @@ function LeagueCard({
                 size="sm"
                 className="w-full rounded-none font-black tracking-[0.15em] uppercase"
                 onClick={() => setConfirming(true)}
-                aria-label={`Eliminar torneo ${league.name}`}
+                aria-label={t("deleteTournamentAria", { name: league.name })}
               >
                 <TrashIcon className="size-4" weight="duotone" aria-hidden />
-                Eliminar torneo
+                {t("deleteTournament")}
               </Button>
             )}
           </div>
@@ -494,6 +505,7 @@ function LeagueCard({
 }
 
 function JoinLeagueByCodeBlock() {
+  const t = useTranslations("leagues")
   const router = useRouter()
   const [code, setCode] = useState("")
   const [busy, setBusy] = useState(false)
@@ -502,7 +514,7 @@ function JoinLeagueByCodeBlock() {
     e.preventDefault()
     const trimmed = code.trim()
     if (!trimmed) {
-      toast.error("Ingresá el código de la liga.")
+      toast.error(t("toastEnterCode"))
       return
     }
 
@@ -516,9 +528,9 @@ function JoinLeagueByCodeBlock() {
     }
 
     if (res.alreadyMember) {
-      toast.info(`Ya estás en «${res.tournamentName}».`)
+      toast.info(t("toastAlreadyMember", { name: res.tournamentName }))
     } else {
-      toast.success(`Te uniste a «${res.tournamentName}».`)
+      toast.success(t("toastJoined", { name: res.tournamentName }))
     }
 
     setCode("")
@@ -531,10 +543,10 @@ function JoinLeagueByCodeBlock() {
   return (
     <div className="rounded-none border border-dashed border-border bg-muted/10 px-4 py-4 sm:px-5">
       <p className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-        Unirme con código
+        {t("joinByCode")}
       </p>
       <p className="mt-1 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
-        Pegá el código que te pasó el administrador (ej. TMB-XXXX).
+        {t("joinByCodeHint")}
       </p>
       <form
         className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3"
@@ -545,7 +557,7 @@ function JoinLeagueByCodeBlock() {
             htmlFor="join-league-code"
             className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
           >
-            Código de la liga
+            {t("leagueCode")}
           </Label>
           <Input
             id="join-league-code"
@@ -565,7 +577,7 @@ function JoinLeagueByCodeBlock() {
           disabled={busy || !code.trim()}
           className="h-11 shrink-0 rounded-none font-black tracking-[0.15em] uppercase sm:h-10 sm:min-w-36"
         >
-          {busy ? "Uniendo…" : "Unirme"}
+          {busy ? t("joining") : t("join")}
         </Button>
       </form>
     </div>
@@ -583,6 +595,7 @@ export function MyLeaguesTab({
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
+  const t = useTranslations("leagues")
   const router = useRouter()
   const [deletePending, startDeleteTransition] = useTransition()
   const [optimisticLeagues, removeLeagueOptimistic] = useOptimistic(
@@ -598,7 +611,7 @@ export function MyLeaguesTab({
         toast.error(res.error)
         return
       }
-      toast.success("Torneo eliminado.")
+      toast.success(t("toastDeleted"))
       router.refresh()
     })
   }
@@ -614,7 +627,7 @@ export function MyLeaguesTab({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-          Mis ligas
+          {t("myLeagues")}
         </h2>
         <CreateTournamentTrigger
           currentUserEmail={currentUserEmail}
@@ -627,7 +640,7 @@ export function MyLeaguesTab({
             className="rounded-none font-black tracking-[0.15em] uppercase"
           >
             <PlusCircleIcon className="size-4" weight="duotone" aria-hidden />
-            Crear torneo
+            {t("createTournament")}
           </Button>
         </CreateTournamentTrigger>
       </div>
@@ -637,10 +650,10 @@ export function MyLeaguesTab({
       {listEmpty ? (
         <div className="border border-dashed border-border bg-muted/20 px-4 py-10 text-center">
           <p className="text-sm font-bold tracking-wide uppercase">
-            No estás en ninguna liga todavía
+            {t("emptyTitle")}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Unite con el código de arriba, con el link que te compartan o creá tu propio torneo.
+            {t("emptyHint")}
           </p>
           <CreateTournamentTrigger
             currentUserEmail={currentUserEmail}
@@ -652,7 +665,7 @@ export function MyLeaguesTab({
               className="mt-6 h-12 rounded-none font-black tracking-[0.15em] uppercase"
             >
               <PlusCircleIcon className="size-5" weight="duotone" aria-hidden />
-              Lanzá tu primer torneo
+              {t("launchFirst")}
             </Button>
           </CreateTournamentTrigger>
         </div>

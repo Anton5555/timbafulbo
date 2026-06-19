@@ -18,7 +18,8 @@ import {
 import { parseRules, type TournamentRules } from "@/lib/tournament-rules"
 import { canEditPrediction } from "@/lib/prediction-window"
 import { userHasTournamentAccess } from "@/lib/tournament-access"
-import { displayTeamNameEs } from "@/lib/team-display-name"
+import { routing } from "@/i18n/routing"
+import { displayTeamName } from "@/lib/team-display-name"
 import { pickWinnersFromLeaderboard } from "@/lib/tournament-winner"
 import { isWorldCupComplete } from "@/lib/wc-status"
 
@@ -66,17 +67,22 @@ export type MyTournamentRow = {
   pendingInvitations?: number
 }
 
-function toDashboardMatchTeam(team: {
-  name: string
-  code: string
-}): DashboardMatchTeam {
+function toDashboardMatchTeam(
+  team: {
+    name: string
+    code: string
+  },
+  locale: (typeof routing.locales)[number]
+): DashboardMatchTeam {
   return {
     code: team.code,
-    name: displayTeamNameEs(team),
+    name: displayTeamName(team, locale),
   }
 }
 
-export async function getDashboardMatches(): Promise<DashboardMatch[]> {
+export async function getDashboardMatches(
+  locale: (typeof routing.locales)[number] = "es"
+): Promise<DashboardMatch[]> {
   const rows = await prisma.match.findMany({
     orderBy: [{ startTime: "asc" }, { id: "asc" }],
     include: {
@@ -97,8 +103,8 @@ export async function getDashboardMatches(): Promise<DashboardMatch[]> {
 
   return rows.map((m) => ({
     ...m,
-    homeTeam: toDashboardMatchTeam(m.homeTeam),
-    awayTeam: toDashboardMatchTeam(m.awayTeam),
+    homeTeam: toDashboardMatchTeam(m.homeTeam, locale),
+    awayTeam: toDashboardMatchTeam(m.awayTeam, locale),
   }))
 }
 
@@ -116,12 +122,13 @@ export type DashboardMatchWithPrediction = DashboardMatch & {
 /** Dashboard matches with the user's prediction for the tournament; `null` if the user has no access. */
 export async function getDashboardMatchesWithPredictions(
   userId: string,
-  tournamentId: string
+  tournamentId: string,
+  locale: (typeof routing.locales)[number] = "es"
 ): Promise<DashboardMatchWithPrediction[] | null> {
   const allowed = await userHasTournamentAccess(userId, tournamentId)
   if (!allowed) return null
 
-  const allMatches = await getDashboardMatches()
+  const allMatches = await getDashboardMatches(locale)
   if (allMatches.length === 0) return []
 
   const now = Date.now()
@@ -192,10 +199,10 @@ export async function getDashboardMatchesWithPredictions(
 }
 
 /** Matches for users without a league: same data as the fixture, no predictions and no editing. */
-export async function getDashboardMatchesReadOnly(): Promise<
-  DashboardMatchWithPrediction[]
-> {
-  const allMatches = await getDashboardMatches()
+export async function getDashboardMatchesReadOnly(
+  locale: (typeof routing.locales)[number] = "es"
+): Promise<DashboardMatchWithPrediction[]> {
+  const allMatches = await getDashboardMatches(locale)
   const matches = filterReadOnlyDashboardMatches(allMatches)
   return matches.map((m) => ({
     ...m,

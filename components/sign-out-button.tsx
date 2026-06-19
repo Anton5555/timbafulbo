@@ -1,11 +1,15 @@
 "use client"
 
+import { useLocale } from "next-intl"
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
 
 export function SignOutButton() {
+  const t = useTranslations("account")
+  const locale = useLocale()
   const [loading, setLoading] = useState(false)
 
   return (
@@ -18,11 +22,11 @@ export function SignOutButton() {
         try {
           await authClient.signOut()
         } finally {
-          window.location.href = "/"
+          window.location.href = `/${locale}`
         }
       }}
     >
-      {loading ? "Cerrando sesión…" : "Salir"}
+      {loading ? t("signingOut") : t("signOut")}
     </Button>
   )
 }

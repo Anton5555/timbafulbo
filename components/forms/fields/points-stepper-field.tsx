@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import type { Control, FieldPath, FieldValues } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
@@ -20,12 +21,16 @@ function PointsStepperControl({
   disabled,
   label,
   suffix,
+  minusAriaLabel,
+  plusAriaLabel,
 }: {
   value: number
   onChange: (n: number) => void
   disabled?: boolean
   label: string
   suffix: string
+  minusAriaLabel: string
+  plusAriaLabel: string
 }) {
   return (
     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
@@ -41,7 +46,7 @@ function PointsStepperControl({
             className="rounded-none border-border"
             disabled={disabled || value <= PTS_MIN}
             onClick={() => onChange(Math.max(PTS_MIN, value - 1))}
-            aria-label={`Menos ${suffix}`}
+            aria-label={minusAriaLabel}
           >
             −
           </Button>
@@ -55,7 +60,7 @@ function PointsStepperControl({
             className="rounded-none border-border"
             disabled={disabled || value >= PTS_MAX}
             onClick={() => onChange(Math.min(PTS_MAX, value + 1))}
-            aria-label={`Más ${suffix}`}
+            aria-label={plusAriaLabel}
           >
             +
           </Button>
@@ -83,6 +88,8 @@ export function PointsStepperField<T extends FieldValues>({
   suffix,
   disabled,
 }: PointsStepperFieldProps<T>) {
+  const t = useTranslations("matches")
+
   return (
     <FormField
       control={control}
@@ -95,6 +102,8 @@ export function PointsStepperField<T extends FieldValues>({
             value={field.value}
             onChange={field.onChange}
             disabled={disabled}
+            minusAriaLabel={t("stepperMinus", { label: suffix })}
+            plusAriaLabel={t("stepperPlus", { label: suffix })}
           />
           <FormMessage className="text-[10px]" />
         </FormItem>

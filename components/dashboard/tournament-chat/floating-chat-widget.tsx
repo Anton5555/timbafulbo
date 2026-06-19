@@ -1,8 +1,9 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/routing"
 import { useState } from "react"
 import { ChatsCircleIcon, XIcon } from "@phosphor-icons/react"
+import { useTranslations } from "next-intl"
 
 import { TournamentChatView } from "@/components/dashboard/tournament-chat/tournament-chat-view"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,7 @@ export function FloatingChatWidget({
   tournaments: { id: string; name: string }[]
   initialMessages: TournamentChatMessageRow[]
 }) {
+  const t = useTranslations("chat")
   const isDesktop = useIsDesktopSm()
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
@@ -41,7 +43,7 @@ export function FloatingChatWidget({
         >
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <span className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-              Chat del torneo
+              {t("widgetTitle")}
             </span>
             <Button
               type="button"
@@ -49,7 +51,7 @@ export function FloatingChatWidget({
               size="icon-sm"
               className="size-7 rounded-none"
               onClick={() => setOpen(false)}
-              aria-label="Cerrar chat"
+              aria-label={t("closeChat")}
             >
               <XIcon className="size-4" aria-hidden />
             </Button>
@@ -71,7 +73,7 @@ export function FloatingChatWidget({
           open && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Cerrar chat" : "Abrir chat del torneo"}
+        aria-label={open ? t("closeChat") : t("openChat")}
         aria-expanded={open}
       >
         <ChatsCircleIcon className="size-7" weight="duotone" aria-hidden />

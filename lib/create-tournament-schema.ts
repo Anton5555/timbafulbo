@@ -11,7 +11,7 @@ const emailItemSchema = z
   .trim()
   .min(3)
   .max(320)
-  .refine((v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Email inválido.")
+  .refine((v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "invalidEmail")
 
 /** Email list only (shared by create-tournament and invite-to-existing-tournament flows). */
 export const inviteEmailsOnlySchema = z.object({
@@ -19,7 +19,7 @@ export const inviteEmailsOnlySchema = z.object({
     .array(emailItemSchema)
     .max(
       MAX_TOURNAMENT_INVITEES,
-      `Máximo ${MAX_TOURNAMENT_INVITEES} invitados por torneo.`
+      "maxInvitees"
     ),
 })
 
@@ -28,8 +28,8 @@ export const createTournamentInputSchema = z
     name: z
       .string()
       .trim()
-      .min(1, "El nombre es obligatorio.")
-      .max(120, "El nombre es demasiado largo."),
+      .min(1, "nameRequired")
+      .max(120, "nameTooLong"),
     rules: tournamentRulesSchema,
   })
   .merge(inviteEmailsOnlySchema)

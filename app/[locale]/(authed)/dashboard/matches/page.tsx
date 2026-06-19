@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
 import { Suspense } from "react"
+import { getLocale, getTranslations } from "next-intl/server"
 
 import {
   isMatchFilter,
   loadUserTournaments,
   redirectToDefaultTournamentIfInvalid,
   requireAuthenticatedDashboardUser,
-} from "@/app/(authed)/dashboard/_lib/dashboard-page-context"
+} from "@/app/[locale]/(authed)/dashboard/_lib/dashboard-page-context"
 import { MatchesTab, type MatchesTabMatch } from "@/components/dashboard/matches-tab"
 import { MatchesTabSkeleton } from "@/components/dashboard/skeletons"
 import { env } from "@/env"
@@ -16,9 +16,11 @@ import {
   getDashboardMatchesWithPredictions,
 } from "@/lib/dashboard-data"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
+import { localizedRedirectFromRequest } from "@/lib/localized-redirect"
 
-export const metadata: Metadata = {
-  title: "Partidos",
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("nav")
+  return { title: t("matches") }
 }
 
 export const dynamic = "force-dynamic"
@@ -31,9 +33,10 @@ async function MatchesContent({
   matchFilter?: string
 }) {
   const { userId, userEmail } = await requireAuthenticatedDashboardUser()
+  const locale = await getLocale()
   const tournaments = await loadUserTournaments(userId)
 
-  const tournamentId = redirectToDefaultTournamentIfInvalid({
+  const tournamentId = await redirectToDefaultTournamentIfInvalid({
     tab: "matches",
     tournaments,
     requestedTournamentId: tournament,
@@ -45,7 +48,8 @@ async function MatchesContent({
   if (tournaments.length > 0) {
     const withPred = await getDashboardMatchesWithPredictions(
       userId,
-      tournamentId!
+      tournamentId!,
+      locale
     )
     if (withPred === null) {
       const qs = new URLSearchParams()
@@ -53,14 +57,17 @@ async function MatchesContent({
       if (isMatchFilter(matchFilter)) {
         qs.set("matchFilter", matchFilter)
       }
-      redirect(`${DASHBOARD_SECTION_PATH.matches}?${qs.toString()}`)
+      await localizedRedirectFromRequest(
+        `${DASHBOARD_SECTION_PATH.matches}?${qs.toString()}`
+      )
+    } else {
+      serializedMatches = withPred.map((m) => ({
+        ...m,
+        startTime: m.startTime.toISOString(),
+      }))
     }
-    serializedMatches = withPred.map((m) => ({
-      ...m,
-      startTime: m.startTime.toISOString(),
-    }))
   } else {
-    const browse = await getDashboardMatchesReadOnly()
+    const browse = await getDashboardMatchesReadOnly(locale)
     serializedMatches = browse.map((m) => ({
       ...m,
       startTime: m.startTime.toISOString(),

@@ -7,6 +7,7 @@ import { z } from "zod"
 
 import { Prisma } from "@/generated/prisma/client"
 
+import { actionError, actionErrorFromZod } from "@/lib/action-errors"
 import { auth } from "@/lib/auth"
 import {
   createTournamentInputSchema,
@@ -48,15 +49,14 @@ export async function createTournament(
 ): Promise<CreateTournamentResult> {
   const parsed = createTournamentInputSchema.safeParse(input)
   if (!parsed.success) {
-    const err = parsed.error.issues[0]?.message ?? "Datos inválidos."
-    return { ok: false, error: err }
+    return { ok: false, error: await actionErrorFromZod(parsed.error) }
   }
 
   const session = await auth.api.getSession({
     headers: await headers(),
   })
   if (!session?.user?.id) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
   const userId = session.user.id
   const ownerEmail = session.user.email ?? null
@@ -128,7 +128,7 @@ export async function createTournament(
     invitationRows = result
   } catch (e) {
     console.error(e)
-    return { ok: false, error: "No se pudo crear el torneo. Probá de nuevo." }
+    return { ok: false, error: await actionError("createTournamentFailed") }
   }
 
   const baseUrl = env.APP_BASE_URL.replace(/\/$/, "")
@@ -178,15 +178,14 @@ export async function inviteToTournament(
 ): Promise<InviteToTournamentResult> {
   const parsed = inviteToTournamentInputSchema.safeParse(input)
   if (!parsed.success) {
-    const err = parsed.error.issues[0]?.message ?? "Datos inválidos."
-    return { ok: false, error: err }
+    return { ok: false, error: await actionErrorFromZod(parsed.error) }
   }
 
   const session = await auth.api.getSession({
     headers: await headers(),
   })
   if (!session?.user?.id) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
   const userId = session.user.id
   const ownerEmail = session.user.email ?? null
@@ -199,9 +198,9 @@ export async function inviteToTournament(
 
   if (normalizedInvitees.length === 0) {
     if (parsed.data.invitees.length > 0) {
-      return { ok: false, error: "No podés invitarte a vos mismo." }
+      return { ok: false, error: await actionError("cannotInviteSelf") }
     }
-    return { ok: false, error: "Agregá al menos un correo." }
+    return { ok: false, error: await actionError("addAtLeastOneEmail") }
   }
 
   const tournament = await prisma.tournament.findUnique({
@@ -209,10 +208,10 @@ export async function inviteToTournament(
     select: { id: true, name: true, ownerId: true },
   })
   if (!tournament) {
-    return { ok: false, error: "Torneo no encontrado." }
+    return { ok: false, error: await actionError("tournamentNotFound") }
   }
   if (tournament.ownerId !== userId) {
-    return { ok: false, error: "No tenés permiso." }
+    return { ok: false, error: await actionError("noPermission") }
   }
 
   const tournamentName = tournament.name
@@ -288,7 +287,7 @@ export async function inviteToTournament(
     console.error(e)
     return {
       ok: false,
-      error: "No se pudieron crear las invitaciones. Probá de nuevo.",
+      error: await actionError("createInvitationsFailed"),
     }
   }
 
@@ -344,7 +343,7 @@ export async function getPendingInvitationsForTournament(
 ): Promise<GetPendingInvitationsResult> {
   const parsed = tournamentIdSchema.safeParse(rawTournamentId)
   if (!parsed.success) {
-    return { ok: false, error: "Torneo inválido." }
+    return { ok: false, error: await actionError("invalidTournament") }
   }
   const tournamentId = parsed.data
 
@@ -352,7 +351,7 @@ export async function getPendingInvitationsForTournament(
     headers: await headers(),
   })
   if (!session?.user?.id) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
   const userId = session.user.id
 
@@ -361,10 +360,10 @@ export async function getPendingInvitationsForTournament(
     select: { ownerId: true },
   })
   if (!tournament) {
-    return { ok: false, error: "Torneo no encontrado." }
+    return { ok: false, error: await actionError("tournamentNotFound") }
   }
   if (tournament.ownerId !== userId) {
-    return { ok: false, error: "No tenés permiso." }
+    return { ok: false, error: await actionError("noPermission") }
   }
 
   const rows = await prisma.invitation.findMany({
@@ -403,7 +402,7 @@ export async function resendInvitation(
     headers: await headers(),
   })
   if (!session?.user?.id) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
   const userId = session.user.id
 
@@ -414,15 +413,15 @@ export async function resendInvitation(
     },
   })
 
-  if (!inv) return { ok: false, error: "Invitación no encontrada." }
+  if (!inv) return { ok: false, error: await actionError("invitationNotFound") }
   if (inv.tournament.ownerId !== userId) {
-    return { ok: false, error: "No tenés permiso." }
+    return { ok: false, error: await actionError("noPermission") }
   }
   if (inv.status !== "PENDING") {
-    return { ok: false, error: "Solo se pueden reenviar invitaciones pendientes." }
+    return { ok: false, error: await actionError("resendPendingOnly") }
   }
   if (inv.expiresAt.getTime() < Date.now()) {
-    return { ok: false, error: "La invitación expiró." }
+    return { ok: false, error: await actionError("invitationExpired") }
   }
 
   const baseUrl = env.APP_BASE_URL.replace(/\/$/, "")
@@ -437,7 +436,7 @@ export async function resendInvitation(
       joinUrl: `${baseUrl}/join/${inv.token}`,
     })
   } catch {
-    return { ok: false, error: "No se pudo enviar el correo." }
+    return { ok: false, error: await actionError("sendEmailFailed") }
   }
 
   return { ok: true }
@@ -450,7 +449,7 @@ export async function revokeInvitation(
     headers: await headers(),
   })
   if (!session?.user?.id) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
   const userId = session.user.id
 
@@ -461,12 +460,12 @@ export async function revokeInvitation(
     },
   })
 
-  if (!inv) return { ok: false, error: "Invitación no encontrada." }
+  if (!inv) return { ok: false, error: await actionError("invitationNotFound") }
   if (inv.tournament.ownerId !== userId) {
-    return { ok: false, error: "No tenés permiso." }
+    return { ok: false, error: await actionError("noPermission") }
   }
   if (inv.status !== "PENDING") {
-    return { ok: false, error: "Solo se pueden revocar invitaciones pendientes." }
+    return { ok: false, error: await actionError("revokePendingOnly") }
   }
 
   await prisma.invitation.update({
@@ -500,21 +499,21 @@ export async function joinTournamentByInviteCode(
     typeof rawCode === "string" ? rawCode : ""
   )
   if (!parsed.success) {
-    return { ok: false, error: "Ingresá un código válido." }
+    return { ok: false, error: await actionError("invalidJoinCode") }
   }
 
   const session = await auth.api.getSession({
     headers: await headers(),
   })
   if (!session?.user?.id) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
   const userId = session.user.id
   const userEmail = session.user.email?.trim().toLowerCase() || null
 
   const code = parsed.data.replace(/\s+/g, "").toUpperCase()
   if (!code) {
-    return { ok: false, error: "Ingresá un código válido." }
+    return { ok: false, error: await actionError("invalidJoinCode") }
   }
 
   const tournament = await prisma.tournament.findUnique({
@@ -524,7 +523,7 @@ export async function joinTournamentByInviteCode(
   if (!tournament) {
     return {
       ok: false,
-      error: "No encontramos una liga con ese código.",
+      error: await actionError("leagueNotFoundByCode"),
     }
   }
 
@@ -603,7 +602,7 @@ export async function joinTournamentByInviteCode(
       }
     })
   } catch {
-    return { ok: false, error: "No se pudo unir. Probá de nuevo." }
+    return { ok: false, error: await actionError("joinFailed") }
   }
 
   if (shouldRevalidate) {
@@ -627,7 +626,7 @@ export async function deleteTournament(
 ): Promise<DeleteTournamentResult> {
   const parsed = tournamentIdSchema.safeParse(rawId)
   if (!parsed.success) {
-    return { ok: false, error: "Torneo inválido." }
+    return { ok: false, error: await actionError("invalidTournament") }
   }
   const tournamentId = parsed.data
 
@@ -635,7 +634,7 @@ export async function deleteTournament(
     headers: await headers(),
   })
   if (!session?.user?.id) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
   const userId = session.user.id
 
@@ -644,10 +643,10 @@ export async function deleteTournament(
     select: { id: true, ownerId: true },
   })
   if (!tournament) {
-    return { ok: false, error: "Torneo no encontrado." }
+    return { ok: false, error: await actionError("tournamentNotFound") }
   }
   if (tournament.ownerId !== userId) {
-    return { ok: false, error: "No tenés permiso para eliminar este torneo." }
+    return { ok: false, error: await actionError("deleteTournamentForbidden") }
   }
 
   try {
@@ -655,7 +654,7 @@ export async function deleteTournament(
       where: { id: tournamentId },
     })
   } catch {
-    return { ok: false, error: "No se pudo eliminar el torneo. Probá de nuevo." }
+    return { ok: false, error: await actionError("deleteTournamentFailed") }
   }
 
   revalidatePath("/dashboard")

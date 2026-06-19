@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
 import { z } from "zod"
 
+import { actionError, resolveActionError } from "@/lib/action-errors"
 import { auth } from "@/lib/auth"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
 import { prisma } from "@/lib/prisma"
@@ -40,7 +41,7 @@ export async function getTournamentChatMessages(
 ): Promise<GetTournamentChatMessagesResult> {
   const parsed = tournamentIdSchema.safeParse(tournamentId)
   if (!parsed.success) {
-    return { ok: false, error: "Torneo inválido." }
+    return { ok: false, error: await actionError("invalidTournament") }
   }
 
   const session = await auth.api.getSession({
@@ -48,7 +49,7 @@ export async function getTournamentChatMessages(
   })
   const userId = session?.user?.id
   if (!userId) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
 
   const messages = await getTournamentChatMessagesForUser(
@@ -56,7 +57,7 @@ export async function getTournamentChatMessages(
     parsed.data
   )
   if (messages === null) {
-    return { ok: false, error: "No tenés acceso a este torneo." }
+    return { ok: false, error: await actionError("noTournamentAccess") }
   }
 
   return { ok: true, messages }
@@ -68,12 +69,12 @@ export async function sendTournamentChatMessage(input: {
 }): Promise<SendTournamentChatMessageResult> {
   const parsedTournament = tournamentIdSchema.safeParse(input.tournamentId)
   if (!parsedTournament.success) {
-    return { ok: false, error: "Torneo inválido." }
+    return { ok: false, error: await actionError("invalidTournament") }
   }
 
   const normalized = normalizeTournamentChatBody(input.body)
   if (!normalized.ok) {
-    return { ok: false, error: normalized.error }
+    return { ok: false, error: await resolveActionError(normalized.error) }
   }
 
   const session = await auth.api.getSession({
@@ -81,7 +82,7 @@ export async function sendTournamentChatMessage(input: {
   })
   const userId = session?.user?.id
   if (!userId) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
 
   const allowed = await userHasTournamentAccess(
@@ -89,7 +90,7 @@ export async function sendTournamentChatMessage(input: {
     parsedTournament.data
   )
   if (!allowed) {
-    return { ok: false, error: "No tenés acceso a este torneo." }
+    return { ok: false, error: await actionError("noTournamentAccess") }
   }
 
   const created = await prisma.tournamentChatMessage.create({
@@ -132,7 +133,7 @@ export async function deleteTournamentChatMessage(
 ): Promise<DeleteTournamentChatMessageResult> {
   const parsed = messageIdSchema.safeParse(messageId)
   if (!parsed.success) {
-    return { ok: false, error: "Mensaje inválido." }
+    return { ok: false, error: await actionError("invalidMessage") }
   }
 
   const session = await auth.api.getSession({
@@ -140,7 +141,7 @@ export async function deleteTournamentChatMessage(
   })
   const userId = session?.user?.id
   if (!userId) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
 
   const canDelete = await userCanModerateTournamentChatMessage(
@@ -148,7 +149,7 @@ export async function deleteTournamentChatMessage(
     parsed.data
   )
   if (!canDelete) {
-    return { ok: false, error: "No podés eliminar este mensaje." }
+    return { ok: false, error: await actionError("cannotDeleteMessage") }
   }
 
   await prisma.tournamentChatMessage.update({

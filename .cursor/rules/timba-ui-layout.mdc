@@ -8,7 +8,9 @@ alwaysApply: false
 
 ## Idioma
 
-- Toda la UI orientada al usuario debe estar en **español** (etiquetas, botones, pestañas, vacíos, errores visibles, `aria-label` cuando aplique).
+- La app usa **next-intl** con rutas prefijadas (`/es`, `/en`). El locale por defecto es **español**.
+- Toda la UI orientada al usuario debe ir en archivos de mensajes (`messages/es.json`, `messages/en.json`), no hardcodeada en componentes.
+- Al agregar copy nuevo, añadí la clave en ambos idiomas. Español es el default; inglés es secundario.
 
 ## Tipografía y jerarquía (“scoreboard”)
 
@@ -27,7 +29,7 @@ alwaysApply: false
 
 - Shell típico: **`relative flex min-h-svh flex-col`** (o **`items-center`** si va centrado), **`bg-background`**, padding **`p-6 lg:p-12`**.
 - Contenedor principal: **`max-w-6xl`**, grid **`grid-cols-1`** → **`lg:grid-cols-2`** cuando haya dos bloques (hero + aside).
-- Capa de grilla: elemento **`fixed inset-0 -z-10`** con gradientes lineales finos (patrón ya usado en [`app/page.tsx`](app/page.tsx)).
+- Capa de grilla: elemento **`fixed inset-0 -z-10`** con gradientes lineales finos (patrón ya usado en [`app/[locale]/page.tsx`](app/[locale]/page.tsx)).
 - Bloques tipo “ticket/card”: **`border border-border`**, **`bg-card`**, **`shadow-2xl`**, separadores internos con **`border-dashed`**.
 
 ## Layout — dashboard autenticado
@@ -55,6 +57,6 @@ alwaysApply: false
 
 ## Referencias rápidas en código
 
-- Home: [`app/page.tsx`](app/page.tsx).
+- Home: [`app/[locale]/page.tsx`](app/[locale]/page.tsx).
 - Dashboard: redirect canónico en [`app/(authed)/dashboard/page.tsx`](app/(authed)/dashboard/page.tsx); vistas por tab en [`app/(authed)/dashboard/matches/page.tsx`](app/(authed)/dashboard/matches/page.tsx), [`app/(authed)/dashboard/leaderboards/page.tsx`](app/(authed)/dashboard/leaderboards/page.tsx), [`app/(authed)/dashboard/leagues/page.tsx`](app/(authed)/dashboard/leagues/page.tsx).
 - Piezas de dashboard: [`components/dashboard/`](components/dashboard/).

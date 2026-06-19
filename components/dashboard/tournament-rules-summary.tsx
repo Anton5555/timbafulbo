@@ -1,25 +1,32 @@
+"use client"
+
+import { useTranslations } from "next-intl"
+
 import type { TournamentRules } from "@/lib/tournament-rules"
 
 function RulesList({ rules }: { rules: TournamentRules }) {
+  const t = useTranslations("rules")
+  const tCommon = useTranslations("common")
+
   return (
     <ul className="flex flex-col gap-1 text-xs">
       <li className="flex items-baseline justify-between gap-3">
-        <span className="text-muted-foreground">Pleno exacto</span>
+        <span className="text-muted-foreground">{t("exactScore")}</span>
         <span className="font-black tabular-nums text-foreground">
-          {rules.exactScorePoints} pts
+          {rules.exactScorePoints} {tCommon("pts")}
         </span>
       </li>
       <li className="flex items-baseline justify-between gap-3">
-        <span className="text-muted-foreground">Resultado (sin pleno)</span>
+        <span className="text-muted-foreground">{t("resultOnly")}</span>
         <span className="font-black tabular-nums text-foreground">
-          {rules.resultPoints} pts
+          {rules.resultPoints} {tCommon("pts")}
         </span>
       </li>
       {rules.knockoutMultiplier === 2 ? (
         <li className="flex items-baseline justify-between gap-3">
-          <span className="text-muted-foreground">Bonus de fase</span>
+          <span className="text-muted-foreground">{t("phaseBonus")}</span>
           <span className="font-black text-foreground">
-            ×2 en semis, 3er puesto y final
+            {t("phaseBonusDetail")}
           </span>
         </li>
       ) : null}
@@ -34,11 +41,13 @@ export function TournamentRulesSummary({
   rules: TournamentRules
   variant?: "banner" | "inline"
 }) {
+  const t = useTranslations("rules")
+
   if (variant === "inline") {
     return (
       <div className="flex flex-col gap-2 border border-dashed border-border bg-muted/10 p-2.5">
         <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-          Reglas de puntos
+          {t("pointsRules")}
         </p>
         <RulesList rules={rules} />
       </div>
@@ -48,7 +57,7 @@ export function TournamentRulesSummary({
   return (
     <section className="flex flex-col gap-2 rounded-none border border-dashed border-border bg-muted/10 p-3">
       <p className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-        Reglas de la timba
+        {t("tournamentRules")}
       </p>
       <RulesList rules={rules} />
     </section>

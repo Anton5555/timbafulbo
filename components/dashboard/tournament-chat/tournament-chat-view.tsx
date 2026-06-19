@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { TournamentChatPanel } from "@/components/dashboard/tournament-chat/tournament-chat-panel"
 import {
   Select,
@@ -25,6 +27,9 @@ export function TournamentChatView({
   panelClassName?: string
   showTournamentFilter?: boolean
 }) {
+  const t = useTranslations("chat")
+  const tCommon = useTranslations("common")
+
   const {
     tournamentId,
     setTournamentId,
@@ -44,7 +49,7 @@ export function TournamentChatView({
         )}
       >
         <p className="text-sm text-muted-foreground">
-          Unite o creá una liga para usar el chat del torneo.
+          {t("emptyNoLeagues")}
         </p>
       </div>
     )
@@ -55,7 +60,7 @@ export function TournamentChatView({
       {showTournamentFilter ? (
         <div className="flex flex-col gap-2.5 border-b border-border bg-muted/10 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="shrink-0 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-            Torneo
+            {tCommon("tournament")}
           </span>
           <Select
             value={tournamentId ?? ""}
@@ -64,12 +69,12 @@ export function TournamentChatView({
             }}
           >
             <SelectTrigger size="sm" className="h-9 w-full min-w-0 sm:flex-1">
-              <SelectValue placeholder="Elegí un torneo" />
+              <SelectValue placeholder={tCommon("selectTournament")} />
             </SelectTrigger>
             <SelectContent>
-              {tournaments.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name}
+              {tournaments.map((tournament) => (
+                <SelectItem key={tournament.id} value={tournament.id}>
+                  {tournament.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -93,7 +98,7 @@ export function TournamentChatView({
       ) : (
         <div className="border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Elegí un torneo para ver el chat.
+            {t("pickTournament")}
           </p>
         </div>
       )}

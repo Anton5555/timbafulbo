@@ -1,8 +1,8 @@
 "use client"
 
 import { GoogleLogoIcon } from "@phosphor-icons/react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link, useRouter, routing } from "@/i18n/routing"
+import { useLocale, useTranslations } from "next-intl"
 import { useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -33,19 +33,21 @@ export function JoinInvitationClient({
   token: string
   view: JoinInvitationView
 }) {
+  const t = useTranslations("join")
+  const locale = useLocale() as (typeof routing.locales)[number]
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
   if (view.kind === "public_join_failed") {
     return (
-      <MessageCard title="No pudimos unirte">
+      <MessageCard title={t("joinFailed")}>
         <p className="mt-2 text-sm text-muted-foreground">{view.error}</p>
         <Button asChild className="mt-6 rounded-none font-black uppercase tracking-widest">
-          <Link href="/">Volver al inicio</Link>
+          <Link href="/">{t("backHome")}</Link>
         </Button>
         <Button asChild variant="outline" className="mt-3 w-full rounded-none font-black uppercase tracking-widest">
-          <Link href="/dashboard">Ir al panel</Link>
+          <Link href="/dashboard">{t("goDashboard")}</Link>
         </Button>
       </MessageCard>
     )
@@ -53,7 +55,7 @@ export function JoinInvitationClient({
 
   if (view.kind === "public_code") {
     const { tournamentName, inviteCode } = view
-    const joinPath = buildTournamentInvitePath(inviteCode)
+    const joinPath = buildTournamentInvitePath(inviteCode, locale)
 
     async function signInGoogle() {
       setBusy(true)
@@ -65,7 +67,7 @@ export function JoinInvitationClient({
         callbackURL,
       })
       if (signInError) {
-        setErr(signInError.message ?? "No se pudo iniciar sesión con Google.")
+        setErr(signInError.message ?? t("signInError"))
       }
       setBusy(false)
     }
@@ -73,15 +75,13 @@ export function JoinInvitationClient({
     return (
       <MessageCard title={tournamentName}>
         <p className="mt-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-          Invitación al torneo
+          {t("tournamentInvite")}
         </p>
         <p className="mt-4 text-sm text-muted-foreground">
-          Código:{" "}
+          {t("code")}{" "}
           <span className="font-bold text-foreground tabular-nums">{inviteCode}</span>
         </p>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Entrá con Google para sumarte a la liga. Si ya tenés cuenta, vas a entrar directo.
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">{t("publicCodeHint")}</p>
         <div className="mt-6 space-y-3">
           <Button
             type="button"
@@ -91,7 +91,7 @@ export function JoinInvitationClient({
             onClick={() => void signInGoogle()}
           >
             <GoogleLogoIcon className="size-5" weight="bold" aria-hidden />
-            Ingresar con Google
+            {t("signInGoogle")}
           </Button>
         </div>
         {err ? (
@@ -103,12 +103,10 @@ export function JoinInvitationClient({
 
   if (view.kind === "not_found") {
     return (
-      <MessageCard title="Enlace no válido">
-        <p className="mt-2 text-sm text-muted-foreground">
-          No encontramos una invitación ni un torneo con este enlace.
-        </p>
+      <MessageCard title={t("invalidLink")}>
+        <p className="mt-2 text-sm text-muted-foreground">{t("invalidLinkBody")}</p>
         <Button asChild className="mt-6 rounded-none font-black uppercase tracking-widest">
-          <Link href="/">Volver al inicio</Link>
+          <Link href="/">{t("backHome")}</Link>
         </Button>
       </MessageCard>
     )
@@ -116,12 +114,10 @@ export function JoinInvitationClient({
 
   if (view.kind === "revoked") {
     return (
-      <MessageCard title="Invitación revocada">
-        <p className="mt-2 text-sm text-muted-foreground">
-          El administrador canceló esta invitación.
-        </p>
+      <MessageCard title={t("revoked")}>
+        <p className="mt-2 text-sm text-muted-foreground">{t("revokedBody")}</p>
         <Button asChild className="mt-6 rounded-none font-black uppercase tracking-widest">
-          <Link href="/dashboard">Ir al panel</Link>
+          <Link href="/dashboard">{t("goDashboard")}</Link>
         </Button>
       </MessageCard>
     )
@@ -129,12 +125,10 @@ export function JoinInvitationClient({
 
   if (view.kind === "accepted") {
     return (
-      <MessageCard title="Ya estás dentro">
-        <p className="mt-2 text-sm text-muted-foreground">
-          Esta invitación ya fue usada.
-        </p>
+      <MessageCard title={t("alreadyIn")}>
+        <p className="mt-2 text-sm text-muted-foreground">{t("acceptedBody")}</p>
         <Button asChild className="mt-6 rounded-none font-black uppercase tracking-widest">
-          <Link href="/dashboard">Ir al panel</Link>
+          <Link href="/dashboard">{t("goDashboard")}</Link>
         </Button>
       </MessageCard>
     )
@@ -142,12 +136,10 @@ export function JoinInvitationClient({
 
   if (view.kind === "expired") {
     return (
-      <MessageCard title="Invitación expirada">
-        <p className="mt-2 text-sm text-muted-foreground">
-          Pedile al administrador que te envíe una nueva.
-        </p>
+      <MessageCard title={t("expired")}>
+        <p className="mt-2 text-sm text-muted-foreground">{t("expiredBody")}</p>
         <Button asChild className="mt-6 rounded-none font-black uppercase tracking-widest">
-          <Link href="/">Volver al inicio</Link>
+          <Link href="/">{t("backHome")}</Link>
         </Button>
       </MessageCard>
     )
@@ -185,18 +177,16 @@ export function JoinInvitationClient({
   return (
     <MessageCard title={tournamentName}>
       <p className="mt-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-        Invitación a la liga
+        {t("leagueInvite")}
       </p>
       <p className="mt-4 text-sm text-muted-foreground">
-        Correo invitado:{" "}
+        {t("invitedEmail")}{" "}
         <span className="font-bold text-foreground">{inviteEmail}</span>
       </p>
 
       {!sessionEmail ? (
         <div className="mt-6 space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Entrá con Google usando la misma cuenta que recibió el correo.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("inviteSignInHint")}</p>
           <Button
             type="button"
             variant="default"
@@ -205,14 +195,16 @@ export function JoinInvitationClient({
             onClick={() => void signInGoogle()}
           >
             <GoogleLogoIcon className="size-5" weight="bold" aria-hidden />
-            Entrar con Google
+            {t("enterGoogle")}
           </Button>
         </div>
       ) : sessionEmail !== inviteEmail ? (
         <div className="mt-6 space-y-3">
           <p className="text-sm text-destructive">
-            Estás conectado como <strong>{sessionEmail}</strong>, pero esta invitación es para{" "}
-            <strong>{inviteEmail}</strong>.
+            {t.rich("wrongAccount", {
+              sessionEmail: () => <strong>{sessionEmail}</strong>,
+              inviteEmail: () => <strong>{inviteEmail}</strong>,
+            })}
           </p>
           <Button
             type="button"
@@ -221,7 +213,7 @@ export function JoinInvitationClient({
             disabled={busy}
             onClick={() => void signInGoogle()}
           >
-            Cambiar de cuenta
+            {t("switchAccount")}
           </Button>
         </div>
       ) : (
@@ -233,7 +225,7 @@ export function JoinInvitationClient({
             className="h-12 w-full rounded-none font-black uppercase tracking-widest"
             onClick={() => void onAccept()}
           >
-            {busy ? "Uniendo…" : "Aceptar invitación"}
+            {busy ? t("joining") : t("acceptInvite")}
           </Button>
         </div>
       )}

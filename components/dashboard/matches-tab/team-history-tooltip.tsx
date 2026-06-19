@@ -1,18 +1,30 @@
-import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
+"use client"
+
+import { useTranslations } from "next-intl"
+
 import type {
   TeamResultHistoryItem,
   TeamResultOutcome,
 } from "@/lib/team-results-history"
+import { useMatchLabels } from "@/hooks/use-match-labels"
 import { cn } from "@/lib/utils"
 
-const OUTCOME_LABEL_ES: Record<TeamResultOutcome, string> = {
+const OUTCOME_LETTER: Record<TeamResultOutcome, string> = {
   W: "G",
   D: "E",
   L: "P",
 }
 
 function TeamHistoryRow({ item }: { item: TeamResultHistoryItem }) {
-  const stageLabel = STAGE_LABEL_ES[item.stage]
+  const t = useTranslations("teamHistory")
+  const { stageLabel } = useMatchLabels()
+
+  const outcomeAria =
+    item.outcome === "W"
+      ? t("won")
+      : item.outcome === "D"
+        ? t("drew")
+        : t("lost")
 
   return (
     <div className="flex items-center gap-2 text-[10px] leading-tight">
@@ -23,15 +35,9 @@ function TeamHistoryRow({ item }: { item: TeamResultHistoryItem }) {
           item.outcome === "D" && "bg-background/10 text-background/80",
           item.outcome === "L" && "bg-background/5 text-background/60",
         )}
-        aria-label={
-          item.outcome === "W"
-            ? "Ganó"
-            : item.outcome === "D"
-              ? "Empató"
-              : "Perdió"
-        }
+        aria-label={outcomeAria}
       >
-        {OUTCOME_LABEL_ES[item.outcome]}
+        {OUTCOME_LETTER[item.outcome]}
       </span>
       <span className="min-w-0 flex-1 truncate font-bold tracking-tight uppercase">
         {item.opponent.name}
@@ -40,7 +46,7 @@ function TeamHistoryRow({ item }: { item: TeamResultHistoryItem }) {
         {item.teamScore}-{item.opponentScore}
       </span>
       <span className="hidden shrink-0 text-[8px] font-bold tracking-widest text-background/60 uppercase sm:inline">
-        {stageLabel}
+        {stageLabel(item.stage)}
       </span>
     </div>
   )
@@ -53,10 +59,12 @@ export function TeamHistoryTooltipContent({
   teamName: string
   history: TeamResultHistoryItem[]
 }) {
+  const t = useTranslations("teamHistory")
+
   if (history.length === 0) {
     return (
       <p className="px-3 py-2 text-center text-[10px] font-bold tracking-widest uppercase">
-        Sin partidos jugados aún
+        {t("noMatches")}
       </p>
     )
   }
@@ -64,7 +72,7 @@ export function TeamHistoryTooltipContent({
   return (
     <div className="flex max-w-64 flex-col gap-1.5 px-2.5 py-2">
       <p className="text-[9px] font-black tracking-[0.15em] text-background/70 uppercase">
-        Resultados previos · {teamName}
+        {t("title", { team: teamName })}
       </p>
       <div className="flex flex-col gap-1">
         {history.map((item) => (

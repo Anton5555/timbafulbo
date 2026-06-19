@@ -2,6 +2,7 @@
 
 import { TrophyIcon } from "@phosphor-icons/react"
 import { useQueryState } from "nuqs"
+import { useTranslations } from "next-intl"
 
 import { TournamentRulesSummary } from "@/components/dashboard/tournament-rules-summary"
 import { dashboardTournamentParser } from "@/components/dashboard/tournament-search-params"
@@ -18,19 +19,6 @@ import type {
 } from "@/lib/dashboard-data"
 import type { TournamentRules } from "@/lib/tournament-rules"
 
-function formatWinnerBanner(winners: LeaderboardRow[]): string | null {
-  if (winners.length === 0) return null
-
-  const points = winners[0].points
-  const names = winners.map((w) => w.displayName).join(", ")
-
-  if (winners.length === 1) {
-    return `Ganador: ${names} — ${points} pts`
-  }
-
-  return `Ganadores empatados: ${names} — ${points} pts`
-}
-
 export function LeaderboardsTab({
   tournaments,
   leaderboardsByTournamentId,
@@ -44,6 +32,9 @@ export function LeaderboardsTab({
   rulesByTournamentId: Record<string, TournamentRules>
   currentUserId: string
 }) {
+  const t = useTranslations("leaderboards")
+  const tCommon = useTranslations("common")
+
   const [tournamentId, setTournamentId] = useQueryState(
     "tournament",
     dashboardTournamentParser.withOptions({
@@ -62,7 +53,15 @@ export function LeaderboardsTab({
 
   const winnerBannerText =
     winnerData.isComplete && winnerData.winners.length > 0
-      ? formatWinnerBanner(winnerData.winners)
+      ? winnerData.winners.length === 1
+        ? t("winnerSingle", {
+            names: winnerData.winners[0]!.displayName,
+            points: winnerData.winners[0]!.points,
+          })
+        : t("winnerTie", {
+            names: winnerData.winners.map((w) => w.displayName).join(", "),
+            points: winnerData.winners[0]!.points,
+          })
       : null
 
   const winnerUserIds = new Set(
@@ -77,8 +76,7 @@ export function LeaderboardsTab({
     return (
       <div className="border border-dashed border-border bg-muted/20 px-4 py-10 text-center">
         <p className="text-sm text-muted-foreground">
-          No tenés torneos para ver clasificaciones. Creá uno o unite con un
-          código de invitación.
+          {t("emptyNoTournaments")}
         </p>
       </div>
     )
@@ -88,7 +86,7 @@ export function LeaderboardsTab({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-          Filtrar por torneo
+          {t("filterByTournament")}
         </span>
         <Select
           value={tournamentId ?? ""}
@@ -97,12 +95,12 @@ export function LeaderboardsTab({
           }}
         >
           <SelectTrigger size="sm" className="w-full min-w-0 sm:w-72">
-            <SelectValue placeholder="Elegí un torneo" />
+            <SelectValue placeholder={tCommon("selectTournament")} />
           </SelectTrigger>
           <SelectContent>
-            {tournaments.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
-                {t.name}
+            {tournaments.map((tournament) => (
+              <SelectItem key={tournament.id} value={tournament.id}>
+                {tournament.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -132,8 +130,7 @@ export function LeaderboardsTab({
       {rows.length === 0 ? (
         <div className="border border-border bg-muted/10 px-4 py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Todavía no hay puntos registrados en este torneo (o no hay partidos
-            finalizados con pronósticos).
+            {t("emptyNoPoints")}
           </p>
         </div>
       ) : (
@@ -145,10 +142,10 @@ export function LeaderboardsTab({
                   #
                 </th>
                 <th className="px-3 py-2 font-bold tracking-widest text-muted-foreground sm:px-4">
-                  Jugador
+                  {t("player")}
                 </th>
                 <th className="px-3 py-2 text-right font-bold tracking-widest text-muted-foreground sm:px-4">
-                  Pts
+                  {tCommon("pts")}
                 </th>
               </tr>
             </thead>

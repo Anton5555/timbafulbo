@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { PaperPlaneRightIcon } from "@phosphor-icons/react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
-import { sendTournamentChatMessage } from "@/app/(authed)/dashboard/chat/actions"
+import { sendTournamentChatMessage } from "@/app/[locale]/(authed)/dashboard/chat/actions"
 import { Button } from "@/components/ui/button"
 import { useIsDesktopSm } from "@/hooks/use-media-query"
 import { TOURNAMENT_CHAT_MAX_BODY_LENGTH } from "@/lib/tournament-chat-validation"
@@ -20,6 +21,7 @@ export function TournamentChatComposer({
   onSent: (message: TournamentChatMessageRow) => void
   disabled?: boolean
 }) {
+  const t = useTranslations("chat")
   const [body, setBody] = useState("")
   const [busy, setBusy] = useState(false)
   const isDesktop = useIsDesktopSm()
@@ -58,7 +60,7 @@ export function TournamentChatComposer({
       onSubmit={(e) => void handleSubmit(e)}
     >
       <label htmlFor={`chat-body-${tournamentId}`} className="sr-only">
-        Mensaje del chat
+        {t("messageLabel")}
       </label>
       <textarea
         id={`chat-body-${tournamentId}`}
@@ -67,7 +69,7 @@ export function TournamentChatComposer({
         maxLength={TOURNAMENT_CHAT_MAX_BODY_LENGTH}
         value={body}
         disabled={busy || disabled}
-        placeholder="Escribí un mensaje…"
+        placeholder={t("messagePlaceholder")}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={handleKeyDown}
         className={cn(
@@ -87,7 +89,7 @@ export function TournamentChatComposer({
           className="rounded-none font-black tracking-[0.15em] uppercase"
         >
           <PaperPlaneRightIcon className="size-4" weight="duotone" aria-hidden />
-          {busy ? "Enviando…" : isDesktop ? "Enviar ↵" : "Enviar"}
+          {busy ? t("sending") : isDesktop ? t("sendEnter") : t("send")}
         </Button>
       </div>
     </form>

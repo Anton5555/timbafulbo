@@ -1,9 +1,9 @@
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
 
 import { getTournamentsForUser } from "@/lib/dashboard-data"
 import { DASHBOARD_SECTION_PATH, type DashboardTab } from "@/lib/dashboard-routes"
 import { auth } from "@/lib/auth"
+import { localizedRedirectFromRequest } from "@/lib/localized-redirect"
 
 export function isMatchFilter(
   v: string | undefined
@@ -15,13 +15,16 @@ export async function requireAuthenticatedDashboardUser() {
   const session = await auth.api.getSession({
     headers: await headers(),
   })
-  const userId = session?.user?.id
-  if (!userId) {
-    redirect("/")
+
+  if (!session?.user?.id) {
+    await localizedRedirectFromRequest("/")
   }
+
+  const user = session!.user
+
   return {
-    userId,
-    userEmail: session.user.email ?? null,
+    userId: user.id,
+    userEmail: user.email ?? null,
   }
 }
 
@@ -33,12 +36,12 @@ export async function loadUserTournaments(userId: string) {
  * When the user belongs to at least one tournament, `tournament` query must
  * point at a valid id; otherwise redirect to the default (first) tournament.
  */
-export function redirectToDefaultTournamentIfInvalid(options: {
+export async function redirectToDefaultTournamentIfInvalid(options: {
   tab: DashboardTab
   tournaments: { id: string; name: string }[]
   requestedTournamentId: string | undefined
   preserveMatchFilter?: string
-}): string | undefined {
+}): Promise<string | undefined> {
   const { tab, tournaments, requestedTournamentId, preserveMatchFilter } =
     options
   const base = DASHBOARD_SECTION_PATH[tab]
@@ -56,5 +59,5 @@ export function redirectToDefaultTournamentIfInvalid(options: {
   if (isMatchFilter(preserveMatchFilter)) {
     qs.set("matchFilter", preserveMatchFilter)
   }
-  redirect(`${base}?${qs.toString()}`)
+  await localizedRedirectFromRequest(`${base}?${qs.toString()}`)
 }

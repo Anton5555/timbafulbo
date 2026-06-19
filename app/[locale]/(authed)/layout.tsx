@@ -1,7 +1,7 @@
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth"
+import { localizedRedirectFromRequest } from "@/lib/localized-redirect"
 
 export default async function AuthedLayout({
   children,
@@ -13,7 +13,7 @@ export default async function AuthedLayout({
   })
 
   if (!session) {
-    redirect("/")
+    await localizedRedirectFromRequest("/")
   }
 
   return <main className="min-h-svh">{children}</main>

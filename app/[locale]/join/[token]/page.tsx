@@ -1,24 +1,26 @@
 import type { Metadata } from "next"
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
+import { getTranslations } from "next-intl/server"
 
-import { joinTournamentByInviteCode } from "@/app/(authed)/dashboard/tournament-actions"
-import { JoinInvitationClient } from "@/app/join/[token]/join-invitation-client"
-import type { JoinInvitationView } from "@/app/join/[token]/join-invitation-client"
+import { joinTournamentByInviteCode } from "@/app/[locale]/(authed)/dashboard/tournament-actions"
+import { JoinInvitationClient } from "@/app/[locale]/join/[token]/join-invitation-client"
+import type { JoinInvitationView } from "@/app/[locale]/join/[token]/join-invitation-client"
 import { auth } from "@/lib/auth"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
+import { localizedRedirect } from "@/lib/localized-redirect"
 import { prisma } from "@/lib/prisma"
 
-export const metadata: Metadata = {
-  title: "Invitación",
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("join")
+  return { title: t("title") }
 }
 
 export default async function JoinInvitationPage({
   params,
 }: {
-  params: Promise<{ token: string }>
+  params: Promise<{ locale: string; token: string }>
 }) {
-  const { token } = await params
+  const { locale, token } = await params
   const trimmed = token.trim()
 
   const session = await auth.api.getSession({
@@ -74,8 +76,9 @@ export default async function JoinInvitationPage({
         revalidate: false,
       })
       if (res.ok) {
-        redirect(
-          `${DASHBOARD_SECTION_PATH.leagues}?tournament=${encodeURIComponent(res.tournamentId)}`
+        localizedRedirect(
+          `${DASHBOARD_SECTION_PATH.leagues}?tournament=${encodeURIComponent(res.tournamentId)}`,
+          locale
         )
       }
       view = { kind: "public_join_failed", error: res.error }

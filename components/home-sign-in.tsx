@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useSearchParams } from "next/navigation"
 import { ArrowRightIcon } from "@phosphor-icons/react"
+import { useLocale, useTranslations } from "next-intl"
+import { useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
@@ -12,13 +13,17 @@ function isSafeRelativePath(path: string): boolean {
 }
 
 export function HomeSignIn() {
+  const t = useTranslations("home")
+  const locale = useLocale()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const rawNext = searchParams.get("next")
   const callbackURL =
-    rawNext && isSafeRelativePath(rawNext) ? rawNext : "/dashboard"
+    rawNext && isSafeRelativePath(rawNext)
+      ? rawNext
+      : `/${locale}/dashboard`
 
   const handleGoogleSignIn = async () => {
     setLoading(true)
@@ -30,7 +35,7 @@ export function HomeSignIn() {
     })
 
     if (signInError) {
-      setError(signInError.message ?? "No se pudo iniciar sesión con Google.")
+      setError(signInError.message ?? t("signInError"))
       setLoading(false)
     }
   }
@@ -44,12 +49,12 @@ export function HomeSignIn() {
           onClick={handleGoogleSignIn}
           disabled={loading}
         >
-          {loading ? "Redirigiendo…" : "Ingresar con Google"}
+          {loading ? t("signInRedirecting") : t("signInGoogle")}
           <ArrowRightIcon className="ml-2 size-4" weight="bold" />
         </Button>
 
         <p className="text-center text-[10px] text-muted-foreground uppercase">
-          Al ingresar aceptás las reglas de Fair Play.
+          {t("signInFairPlay")}
         </p>
       </div>
       {error ? (

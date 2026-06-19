@@ -1,13 +1,14 @@
 "use client"
 
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema"
+import { useTranslatedSchemaResolver } from "@/hooks/use-translated-schema-resolver"
 import { SoccerBallIcon } from "@phosphor-icons/react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/i18n/routing"
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
-import { createTournament } from "@/app/(authed)/dashboard/tournament-actions"
+import { createTournament } from "@/app/[locale]/(authed)/dashboard/tournament-actions"
 import { SwitchField } from "@/components/forms/fields/switch-field"
 import { PointsStepperField } from "@/components/forms/fields/points-stepper-field"
 import { TextField } from "@/components/forms/fields/text-field"
@@ -29,11 +30,16 @@ type CreateTournamentFormProps = {
 }
 
 export function CreateTournamentForm({ onSuccess }: CreateTournamentFormProps) {
+  const t = useTranslations("createTournament")
+  const tRules = useTranslations("rules")
+  const tCommon = useTranslations("common")
   const router = useRouter()
   const [busy, setBusy] = useState(false)
 
+  const resolver = useTranslatedSchemaResolver(createTournamentInputSchema)
+
   const form = useForm<CreateTournamentInput>({
-    resolver: standardSchemaResolver(createTournamentInputSchema),
+    resolver,
     defaultValues: {
       name: "",
       rules: {
@@ -62,8 +68,7 @@ export function CreateTournamentForm({ onSuccess }: CreateTournamentFormProps) {
       return
     }
 
-    const parts = [`Torneo creado · código ${res.inviteCode}`]
-    toast.success(parts.join(" · "))
+    toast.success(t("toastCreated", { code: res.inviteCode }))
     onSuccess()
     const qs = new URLSearchParams()
     qs.set("tournament", res.tournamentId)
@@ -79,50 +84,54 @@ export function CreateTournamentForm({ onSuccess }: CreateTournamentFormProps) {
       >
         <section className="flex flex-col gap-[clamp(0.5rem,1.25vh,0.75rem)]">
           <p className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-            [01] · Identidad
+            {t("sectionIdentity")}
           </p>
           <TextField
             control={form.control}
             name="name"
-            label="Nombre del grupo"
-            placeholder="La Copa de los Pibes 2026"
+            label={t("groupName")}
+            placeholder={t("groupNamePlaceholder")}
             disabled={busy}
             inputClassName="h-10"
           />
           <p className="text-[10px] leading-snug text-muted-foreground">
             <span className="font-bold tracking-widest text-foreground/80 uppercase">
-              Código auto:
+              {t("autoCodeLabel")}
             </span>{" "}
-            se genera al crear (formato{" "}
-            <span className="font-black text-foreground">TMB-XXXX</span>) y aparece
-            en el toast y en{" "}
-            <span className="font-bold text-foreground">Mis ligas</span>.
+            {t.rich("autoCodeHint", {
+              format: () => (
+                <span className="font-black text-foreground">{t("codeFormat")}</span>
+              ),
+              leaguesSection: () => (
+                <span className="font-bold text-foreground">{t("leaguesSection")}</span>
+              ),
+            })}
           </p>
         </section>
 
         <section className="flex flex-col gap-[clamp(0.5rem,1.5vh,1rem)] rounded-none border border-dashed border-border bg-muted/10 p-3">
           <p className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-            [02] · Reglas de la timba
+            {t("sectionRules")}
           </p>
           <PointsStepperField
             control={form.control}
             name="rules.exactScorePoints"
-            label="Pleno exacto"
-            suffix="pts"
+            label={tRules("exactScore")}
+            suffix={tCommon("pts")}
             disabled={busy}
           />
           <PointsStepperField
             control={form.control}
             name="rules.resultPoints"
-            label="Resultado (sin pleno)"
-            suffix="pts"
+            label={tRules("resultOnly")}
+            suffix={tCommon("pts")}
             disabled={busy}
           />
           <SwitchField
             control={form.control}
             name="rules.knockoutMultiplier"
-            label="Bonus de fase (×2 en semis, 3er puesto y final)"
-            description="Multiplica los puntos de esos partidos."
+            label={t("knockoutBonus")}
+            description={t("knockoutBonusDesc")}
             disabled={busy}
             trueValue={2}
             falseValue={1}
@@ -150,10 +159,10 @@ export function CreateTournamentForm({ onSuccess }: CreateTournamentFormProps) {
                 weight="duotone"
                 aria-hidden
               />
-              <span>Lanzando…</span>
+              <span>{t("launching")}</span>
             </span>
           ) : (
-            <span>Lanzar torneo</span>
+            <span>{t("launch")}</span>
           )}
         </Button>
       </form>

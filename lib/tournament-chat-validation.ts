@@ -7,12 +7,12 @@ export type NormalizeChatBodyResult =
 export function normalizeTournamentChatBody(raw: string): NormalizeChatBodyResult {
   const body = raw.trim()
   if (body.length === 0) {
-    return { ok: false, error: "Escribí un mensaje." }
+    return { ok: false, error: "chatEmptyMessage" }
   }
   if (body.length > TOURNAMENT_CHAT_MAX_BODY_LENGTH) {
     return {
       ok: false,
-      error: `El mensaje no puede superar ${TOURNAMENT_CHAT_MAX_BODY_LENGTH} caracteres.`,
+      error: "chatMessageTooLong",
     }
   }
   return { ok: true, body }

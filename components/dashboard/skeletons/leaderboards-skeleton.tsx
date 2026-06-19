@@ -1,11 +1,17 @@
+"use client"
+
+import { useTranslations } from "next-intl"
+
 import { SkeletonBlock, SkeletonLine } from "./primitives"
 
 export function LeaderboardsTabSkeleton() {
+  const t = useTranslations("leaderboards")
+
   return (
     <div
       className="flex flex-col gap-4"
       aria-busy="true"
-      aria-label="Cargando clasificaciones"
+      aria-label={t("loadingAria")}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <SkeletonLine className="h-3 w-32" />

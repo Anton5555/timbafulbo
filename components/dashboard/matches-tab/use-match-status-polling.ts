@@ -186,7 +186,7 @@ export function useMatchStatusPolling({
   }, [enabled, fetchStatuses, matches])
 
   // Schedule a state bump at the next lock-close instant so open tickets
-  // flip to "Predicciones cerradas" exactly on time, without waiting for a poll.
+  // flip to predictions-closed label exactly on time, without waiting for a poll.
   useEffect(() => {
     const nowMs = syncedNow()
     let nextCloseMs = Number.POSITIVE_INFINITY

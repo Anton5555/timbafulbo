@@ -1,9 +1,10 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Suspense, useEffect } from "react"
 
 import { useNavigationPending } from "@/components/dashboard/navigation-pending-context"
+import { usePathname } from "@/i18n/routing"
 
 function NavigationPendingResetInner() {
   const pathname = usePathname()

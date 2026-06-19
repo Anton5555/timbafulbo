@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
 
 import { DashboardLayoutShell } from "@/components/dashboard/dashboard-layout-shell"
 import { DashboardPageHero } from "@/components/dashboard/dashboard-page-hero"
@@ -12,6 +11,7 @@ import { RouteProgressBar } from "@/components/dashboard/route-progress-bar"
 import { Toaster } from "@/components/ui/sonner"
 import { auth } from "@/lib/auth"
 import { getTournamentsForUser } from "@/lib/dashboard-data"
+import { localizedRedirectFromRequest } from "@/lib/localized-redirect"
 
 export default async function DashboardLayout({
   children,
@@ -23,10 +23,10 @@ export default async function DashboardLayout({
   })
 
   if (!session) {
-    redirect("/")
+    await localizedRedirectFromRequest("/")
   }
 
-  const tournaments = await getTournamentsForUser(session.user.id)
+  const tournaments = await getTournamentsForUser(session!.user.id)
 
   return (
     <NavigationPendingProvider>
@@ -41,9 +41,9 @@ export default async function DashboardLayout({
 
         <DashboardStickyHeader
           user={{
-            name: session.user.name,
-            email: session.user.email,
-            image: session.user.image ?? null,
+            name: session!.user.name,
+            email: session!.user.email,
+            image: session!.user.image ?? null,
           }}
         />
 

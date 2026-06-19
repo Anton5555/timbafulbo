@@ -1,7 +1,8 @@
 "use client"
 
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema"
+import { useTranslatedSchemaResolver } from "@/hooks/use-translated-schema-resolver"
 import { EnvelopeSimpleIcon, SoccerBallIcon } from "@phosphor-icons/react"
+import { useLocale, useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
@@ -12,7 +13,7 @@ import {
   inviteToTournament,
   resendInvitation,
   revokeInvitation,
-} from "@/app/(authed)/dashboard/tournament-actions"
+} from "@/app/[locale]/(authed)/dashboard/tournament-actions"
 import { InviteesField } from "@/components/forms/fields/invitees-field"
 import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
@@ -41,14 +42,18 @@ export function InviteToTournamentForm({
   inviteFromEmail: string
   panelOpen: boolean
 }) {
+  const t = useTranslations("inviteByEmail")
+  const locale = useLocale()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   /** `undefined` means the list hasn't been loaded for this panel open yet. */
   const [pending, setPending] = useState<PendingRow[] | undefined>(undefined)
   const [actionId, setActionId] = useState<string | null>(null)
 
+  const resolver = useTranslatedSchemaResolver(inviteEmailsOnlySchema)
+
   const form = useForm<InviteEmailsOnlyInput>({
-    resolver: standardSchemaResolver(inviteEmailsOnlySchema),
+    resolver,
     defaultValues: { invitees: [] },
     mode: "onTouched",
   })
@@ -82,12 +87,12 @@ export function InviteToTournamentForm({
       return
     }
 
-    const parts: string[] = [`Enviados: ${res.sent}`]
+    const parts: string[] = [t("toastSent", { count: res.sent })]
     if (res.failed.length > 0) {
-      parts.push(`Fallaron: ${res.failed.join(", ")}`)
+      parts.push(t("toastFailed", { emails: res.failed.join(", ") }))
     }
     if (res.skipped.length > 0) {
-      parts.push(`Sin cambios (pendientes o ya miembro): ${res.skipped.join(", ")}`)
+      parts.push(t("toastSkipped", { emails: res.skipped.join(", ") }))
     }
     toast.success(parts.join(" · "))
 
@@ -104,7 +109,7 @@ export function InviteToTournamentForm({
       toast.error(res.error)
       return
     }
-    toast.success("Correo reenviado.")
+    toast.success(t("toastResent"))
     await loadPending()
     router.refresh()
   }
@@ -117,7 +122,7 @@ export function InviteToTournamentForm({
       toast.error(res.error)
       return
     }
-    toast.success("Invitación revocada.")
+    toast.success(t("toastRevoked"))
     await loadPending()
     router.refresh()
   }
@@ -133,7 +138,7 @@ export function InviteToTournamentForm({
       >
         <section className="flex flex-col gap-[clamp(0.5rem,1.25vh,0.75rem)]">
           <p className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-            [01] · Invitar · {leagueName}
+            {t("sectionInvite", { leagueName })}
           </p>
           <InviteesField
             control={form.control}
@@ -146,9 +151,9 @@ export function InviteToTournamentForm({
             className="border-l-2 border-primary bg-muted/40 px-2.5 py-1.5 text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
             aria-live="polite"
           >
-            <span className="text-foreground/90">{">"}</span> Invitación desde{" "}
-            <span className="text-primary">{inviteFromEmail}</span> con link único
-            (Resend).
+            <span className="text-foreground/90">{">"}</span> {t("inviteHintPrefix")}{" "}
+            <span className="text-primary">{inviteFromEmail}</span>{" "}
+            {t("inviteHintSuffix")}
           </div>
         </section>
 
@@ -164,27 +169,27 @@ export function InviteToTournamentForm({
                 weight="duotone"
                 aria-hidden
               />
-              <span>Enviando…</span>
+              <span>{t("sending")}</span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-2">
               <EnvelopeSimpleIcon className="size-5" weight="duotone" aria-hidden />
-              Enviar invitaciones
+              {t("sendInvitations")}
             </span>
           )}
         </Button>
 
         <section className="flex flex-col gap-3 border-t border-dashed border-border pt-4">
           <p className="text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-            [02] · Invitaciones pendientes
+            {t("sectionPending")}
           </p>
           {pending === undefined ? (
             <p className="text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
-              Cargando…
+              {t("loading")}
             </p>
           ) : pending.length === 0 ? (
             <p className="text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
-              No hay invitaciones pendientes.
+              {t("noPending")}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -198,10 +203,11 @@ export function InviteToTournamentForm({
                         {row.email}
                       </p>
                       <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                        Vence ·{" "}
-                        {new Date(row.expiresAt).toLocaleString("es-AR", {
-                          dateStyle: "short",
-                          timeStyle: "short",
+                        {t("expires", {
+                          date: new Date(row.expiresAt).toLocaleString(locale, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          }),
                         })}
                       </p>
                     </div>
@@ -214,7 +220,7 @@ export function InviteToTournamentForm({
                         className="rounded-none font-black tracking-[0.12em] uppercase"
                         onClick={() => void onResend(row.id)}
                       >
-                        {actionId === row.id ? "…" : "Reenviar"}
+                        {actionId === row.id ? "…" : t("resend")}
                       </Button>
                       <Button
                         type="button"
@@ -224,7 +230,7 @@ export function InviteToTournamentForm({
                         className="rounded-none font-black tracking-[0.12em] uppercase"
                         onClick={() => void onRevoke(row.id)}
                       >
-                        {actionId === row.id ? "…" : "Revocar"}
+                        {actionId === row.id ? "…" : t("revoke")}
                       </Button>
                     </div>
                   </li>

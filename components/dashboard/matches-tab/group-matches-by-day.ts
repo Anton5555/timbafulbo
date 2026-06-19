@@ -1,7 +1,5 @@
 import type { MatchStage } from "@/generated/prisma/client"
 
-import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
-
 import type { MatchesTabMatch } from "./types"
 
 function localCalendarDayKey(iso: string): string {
@@ -20,12 +18,6 @@ function parseLocalDayKey(key: string): Date {
   const da = Number(parts[2])
   return new Date(y, mo - 1, da)
 }
-
-const dateHeadingFmt = new Intl.DateTimeFormat("es", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-})
 
 export type MatchGroup = {
   key: string
@@ -53,7 +45,8 @@ function sortMatchesByStartTime(matches: MatchesTabMatch[]) {
 }
 
 export function groupMatchesByLocalDay(
-  matches: MatchesTabMatch[]
+  matches: MatchesTabMatch[],
+  dateHeadingFmt: Intl.DateTimeFormat
 ): MatchDayGroup[] {
   const map = new Map<string, MatchesTabMatch[]>()
   for (const m of matches) {
@@ -80,7 +73,10 @@ export function groupMatchesByLocalDay(
   })
 }
 
-export function groupMatchesByStage(matches: MatchesTabMatch[]): MatchGroup[] {
+export function groupMatchesByStage(
+  matches: MatchesTabMatch[],
+  getStageLabel: (stage: MatchStage) => string
+): MatchGroup[] {
   const map = new Map<MatchStage, MatchesTabMatch[]>()
   for (const m of matches) {
     const list = map.get(m.stage)
@@ -92,7 +88,7 @@ export function groupMatchesByStage(matches: MatchesTabMatch[]): MatchGroup[] {
   }
   return STAGE_ORDER_DESC.filter((stage) => map.has(stage)).map((stage) => ({
     key: stage,
-    label: STAGE_LABEL_ES[stage],
+    label: getStageLabel(stage),
     matches: map.get(stage) ?? [],
   }))
 }

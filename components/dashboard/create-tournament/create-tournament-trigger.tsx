@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { useRef, useState } from "react"
 
 import { CreateTournamentForm } from "@/components/dashboard/create-tournament/create-tournament-form"
@@ -15,6 +16,7 @@ export function CreateTournamentTrigger({
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
+  const t = useTranslations("createTournament")
   const [open, setOpen] = useState(false)
   const [formNonce, setFormNonce] = useState(0)
   const wasOpenRef = useRef(false)
@@ -40,11 +42,11 @@ export function CreateTournamentTrigger({
       <CreateTournamentResponsiveShell
         open={open}
         onOpenChange={handleOpenChange}
-        title="> NUEVO_TORNEO"
-        description="Configurá tu liga y reglas. Después podés invitar gente desde Mis ligas con Compartir torneo o el código TMB-XXXX."
+        title={t("triggerTitle")}
+        description={t("triggerDescription")}
         footer={
           <p className="text-center text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-            timbafulbo · Código y link de invitación
+            {t("triggerFooter")}
           </p>
         }
       >

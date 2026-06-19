@@ -1,11 +1,12 @@
 "use client"
 
 import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 
 import type { MatchStage } from "@/generated/prisma/client"
 
 import { TeamEmblem } from "@/components/team-emblem"
-import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
+import { useMatchLabels } from "@/hooks/use-match-labels"
 
 export type UpcomingFixtureTeam = {
   name: string
@@ -25,29 +26,24 @@ function displayCode(team: UpcomingFixtureTeam): string {
   return team.code.trim().slice(0, 3).toUpperCase() || "?"
 }
 
-function useFormatters() {
-  return useMemo(() => {
-    const timeFmt = new Intl.DateTimeFormat("es", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    })
-    const dateFmt = new Intl.DateTimeFormat("es", {
-      month: "short",
-      day: "numeric",
-    })
-    return { timeFmt, dateFmt }
-  }, [])
-}
-
 export function UpcomingFixtures({ matches }: { matches: UpcomingFixture[] }) {
-  const { timeFmt, dateFmt } = useFormatters()
+  const t = useTranslations("fixtures")
+  const { locale, stageLabel, timeFmt } = useMatchLabels()
+
+  const dateFmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: "short",
+        day: "numeric",
+      }),
+    [locale]
+  )
 
   if (matches.length === 0) {
     return (
       <div className="px-6 py-10">
         <p className="text-center text-sm text-muted-foreground sm:text-base">
-          No hay partidos programados por delante. Volvé más tarde.
+          {t("empty")}
         </p>
       </div>
     )
@@ -59,8 +55,8 @@ export function UpcomingFixtures({ matches }: { matches: UpcomingFixture[] }) {
         const start = new Date(match.startTime)
         const stageLine =
           match.stage === "GROUP" && match.group
-            ? `${STAGE_LABEL_ES[match.stage]} · GR ${match.group}`
-            : STAGE_LABEL_ES[match.stage]
+            ? `${stageLabel(match.stage)} · ${t("groupShort", { letter: match.group })}`
+            : stageLabel(match.stage)
 
         return (
           <div
