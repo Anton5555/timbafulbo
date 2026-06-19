@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation"
+import { localizedRedirectFromRequest } from "@/lib/localized-redirect"
 
-import { isMatchFilter } from "@/app/(authed)/dashboard/_lib/dashboard-page-context"
+import { isMatchFilter } from "@/app/[locale]/(authed)/dashboard/_lib/dashboard-page-context"
 import {
   DASHBOARD_SECTION_PATH,
   parseLegacyDashboardTabQuery,
@@ -31,5 +31,5 @@ export default async function DashboardPage({
   }
 
   const tail = qs.toString()
-  redirect(tail ? `${base}?${tail}` : base)
+  await localizedRedirectFromRequest(tail ? `${base}?${tail}` : base)
 }

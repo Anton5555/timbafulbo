@@ -1,3 +1,7 @@
+"use client"
+
+import { useTranslations } from "next-intl"
+
 import { SkeletonBlock, SkeletonLine } from "./primitives"
 
 function LeagueCardSkeleton() {
@@ -17,8 +21,10 @@ function LeagueCardSkeleton() {
 }
 
 export function LeaguesTabSkeleton() {
+  const t = useTranslations("leagues")
+
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="Cargando ligas">
+    <div className="space-y-6" aria-busy="true" aria-label={t("loadingAria")}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SkeletonLine className="h-3 w-20" />
         <SkeletonLine className="h-9 w-36" />

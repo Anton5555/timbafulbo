@@ -1,7 +1,8 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 import { DashboardTabLink } from "@/components/dashboard/dashboard-tab-link"
 import { tabsListVariants } from "@/components/ui/tabs"
@@ -9,18 +10,11 @@ import {
   DASHBOARD_SECTION_PATH,
   type DashboardTab,
 } from "@/lib/dashboard-routes"
+import { usePathname } from "@/i18n/routing"
 import { cn } from "@/lib/utils"
 
 const tabTriggerClass =
   "shrink-0 rounded-none border-0 px-3 py-2 text-[10px] font-bold tracking-widest uppercase sm:px-4 sm:text-xs data-active:after:opacity-100"
-
-const TAB_ITEMS: { tab: DashboardTab; label: string; mobileOnly?: boolean }[] =
-  [
-    { tab: "matches", label: "Partidos" },
-    { tab: "leaderboards", label: "Clasificaciones" },
-    { tab: "leagues", label: "Mis ligas" },
-    { tab: "chat", label: "Chat", mobileOnly: true },
-  ]
 
 function DashboardTabsNav({
   preservedQuery,
@@ -28,6 +22,18 @@ function DashboardTabsNav({
   preservedQuery: string
 }) {
   const pathname = usePathname()
+  const t = useTranslations("nav")
+
+  const tabItems: {
+    tab: DashboardTab
+    labelKey: "matches" | "leaderboards" | "myLeagues" | "chat"
+    mobileOnly?: boolean
+  }[] = [
+    { tab: "matches", labelKey: "matches" },
+    { tab: "leaderboards", labelKey: "leaderboards" },
+    { tab: "leagues", labelKey: "myLeagues" },
+    { tab: "chat", labelKey: "chat", mobileOnly: true },
+  ]
 
   function hrefFor(tab: DashboardTab): string {
     return `${DASHBOARD_SECTION_PATH[tab]}${preservedQuery}`
@@ -35,13 +41,13 @@ function DashboardTabsNav({
 
   return (
     <nav
-      aria-label="Pestañas del panel principal"
+      aria-label={t("dashboardTabsAria")}
       className={cn(
         tabsListVariants({ variant: "line" }),
         "mb-1 flex h-auto w-full min-w-0 max-w-full flex-nowrap justify-start gap-0 overflow-x-auto overflow-y-clip border-b border-border bg-transparent px-0 pt-0 pb-2 sm:gap-1"
       )}
     >
-      {TAB_ITEMS.map(({ tab, label, mobileOnly }) => {
+      {tabItems.map(({ tab, labelKey, mobileOnly }) => {
         const active = pathname === DASHBOARD_SECTION_PATH[tab]
         return (
           <DashboardTabLink
@@ -56,7 +62,7 @@ function DashboardTabsNav({
               mobileOnly && "sm:hidden"
             )}
           >
-            {label}
+            {t(labelKey)}
           </DashboardTabLink>
         )
       })}

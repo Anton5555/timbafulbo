@@ -1,3 +1,7 @@
+"use client"
+
+import { useTranslations } from "next-intl"
+
 import { SkeletonBlock, SkeletonLine } from "./primitives"
 
 function MatchTicketSkeleton() {
@@ -22,8 +26,10 @@ function MatchTicketSkeleton() {
 }
 
 export function MatchesTabSkeleton() {
+  const t = useTranslations("matches")
+
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="Cargando partidos">
+    <div className="space-y-6" aria-busy="true" aria-label={t("loadingAria")}>
       <SkeletonBlock className="space-y-4 px-3 py-3 sm:px-4">
         <SkeletonLine className="h-3 w-28" />
         <div className="flex flex-wrap gap-2">

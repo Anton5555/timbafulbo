@@ -1,19 +1,24 @@
 import { Suspense } from "react"
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
+import { getTranslations } from "next-intl/server"
 
 import { HomeFeatures } from "@/components/home-features"
 import { HomeSignIn } from "@/components/home-sign-in"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { Button } from "@/components/ui/button"
 import {
   UpcomingFixtures,
   type UpcomingFixture,
 } from "@/components/upcoming-fixtures"
+import { routing } from "@/i18n/routing"
+import { localizedRedirect } from "@/lib/localized-redirect"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { displayTeamNameEs } from "@/lib/team-display-name"
+import { displayTeamName } from "@/lib/team-display-name"
 
-async function getUpcomingMatches(): Promise<UpcomingFixture[]> {
+async function getUpcomingMatches(
+  locale: (typeof routing.locales)[number]
+): Promise<UpcomingFixture[]> {
   const rows = await prisma.match.findMany({
     where: {
       isFinal: false,
@@ -31,27 +36,37 @@ async function getUpcomingMatches(): Promise<UpcomingFixture[]> {
     ...m,
     homeTeam: {
       code: m.homeTeam.code,
-      name: displayTeamNameEs(m.homeTeam),
+      name: displayTeamName(m.homeTeam, locale),
     },
     awayTeam: {
       code: m.awayTeam.code,
-      name: displayTeamNameEs(m.awayTeam),
+      name: displayTeamName(m.awayTeam, locale),
     },
   }))
 }
 
 export const dynamic = "force-dynamic"
 
-export default async function Page() {
+type Props = {
+  params: Promise<{ locale: string }>
+}
+
+export default async function Page({ params }: Props) {
+  const { locale } = await params
+  const t = await getTranslations("home")
+  const tCommon = await getTranslations("common")
+
   const session = await auth.api.getSession({
     headers: await headers(),
   })
 
   if (session) {
-    redirect("/dashboard")
+    localizedRedirect("/dashboard", locale)
   }
 
-  const upcomingMatches = await getUpcomingMatches()
+  const upcomingMatches = await getUpcomingMatches(
+    locale as (typeof routing.locales)[number]
+  )
 
   return (
     <div className="relative flex min-h-svh flex-col items-center bg-background p-6 font-mono lg:p-12">
@@ -60,12 +75,15 @@ export default async function Page() {
         aria-hidden
       />
 
+      <div className="absolute top-6 right-6 lg:top-12 lg:right-12">
+        <LanguageSwitcher variant="inline" />
+      </div>
+
       <div className="grid w-full max-w-6xl grid-cols-1 gap-12 lg:grid-cols-2 lg:items-center">
-        {/* Left: hero & auth */}
         <div className="flex flex-col gap-8 text-left">
           <header className="flex flex-col items-start gap-4">
             <div className="bg-primary px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-primary-foreground uppercase">
-              Mundial 2026
+              {t("badge")}
             </div>
             <h1 className="flex flex-col leading-none">
               <span className="text-sm font-bold tracking-[0.25em] text-muted-foreground uppercase sm:text-base">
@@ -76,8 +94,7 @@ export default async function Page() {
               </span>
             </h1>
             <p className="max-w-[40ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
-              La plataforma definitiva para gestionar tus prodes. Creá ligas,
-              invitá amigos y demostrá quién sabe más de fútbol.
+              {t("tagline")}
             </p>
           </header>
 
@@ -93,7 +110,7 @@ export default async function Page() {
                   disabled
                   size="lg"
                 >
-                  Cargando…
+                  {tCommon("loading")}
                 </Button>
               }
             >
@@ -102,7 +119,6 @@ export default async function Page() {
           </div>
         </div>
 
-        {/* Right: fixtures ticket */}
         <aside className="relative min-w-0">
           <div
             className="absolute -inset-4 bg-primary/5 blur-3xl"
@@ -112,7 +128,7 @@ export default async function Page() {
           <div className="relative overflow-hidden border border-border bg-card shadow-2xl">
             <div className="flex items-center justify-between border-b border-dashed border-border bg-muted/50 px-6 py-4">
               <span className="text-[10px] font-bold tracking-widest uppercase">
-                Live Fixtures
+                {t("liveFixtures")}
               </span>
               <div className="flex gap-1">
                 <div className="size-1.5 rounded-full bg-primary/50" />
@@ -124,7 +140,7 @@ export default async function Page() {
 
             <div className="bg-muted/20 px-6 py-4 text-center">
               <span className="text-[9px] tracking-[0.3em] text-muted-foreground uppercase">
-                Datos provistos por football-data.org
+                {t("dataAttribution")}
               </span>
             </div>
 
@@ -142,11 +158,16 @@ export default async function Page() {
 
       <footer className="mt-16 flex w-full max-w-6xl flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 opacity-50 sm:flex-row">
         <span className="text-[10px] tracking-[0.2em] uppercase">
-          © 2026 timbafulbo
+          {t("footerCopyright")}
         </span>
         <div className="font-mono text-[10px] text-muted-foreground uppercase">
-          (Pulsá <kbd className="border border-border px-1 font-mono">d</kbd>{" "}
-          modo oscuro)
+          {t.rich("footerDarkMode", {
+            key: () => (
+              <kbd className="border border-border px-1 font-mono">
+                {t("darkModeKey")}
+              </kbd>
+            ),
+          })}
         </div>
       </footer>
     </div>

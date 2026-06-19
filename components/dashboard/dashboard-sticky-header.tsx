@@ -1,9 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
-
+import { useSearchParams } from "next/navigation"
 import {
   BookBookmarkIcon,
   GearIcon,
@@ -11,7 +9,9 @@ import {
   TrophyIcon,
   UserIcon,
 } from "@phosphor-icons/react"
+import { useLocale, useTranslations } from "next-intl"
 
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Link, usePathname } from "@/i18n/routing"
 import { authClient } from "@/lib/auth-client"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
 import { cn } from "@/lib/utils"
@@ -50,6 +51,8 @@ function DashboardPrimaryNav({
   reglasActive: boolean
   tournamentId: string | null
 }) {
+  const t = useTranslations("nav")
+
   const leaderboardsHref =
     tournamentId && tournamentId.length > 0
       ? `${DASHBOARD_SECTION_PATH.leaderboards}?tournament=${encodeURIComponent(tournamentId)}`
@@ -58,7 +61,7 @@ function DashboardPrimaryNav({
   return (
     <nav
       className="flex min-w-0 shrink items-center gap-0 border-r border-border pr-2 sm:gap-1 sm:pr-4"
-      aria-label="Secciones del panel"
+      aria-label={t("dashboardSectionsAria")}
     >
       <Button
         variant="ghost"
@@ -81,8 +84,8 @@ function DashboardPrimaryNav({
             weight="duotone"
             aria-hidden
           />
-          <span className="hidden leading-none sm:inline">Clasificaciones</span>
-          <span className="sr-only leading-none sm:hidden">Clasificaciones</span>
+          <span className="hidden leading-none sm:inline">{t("leaderboards")}</span>
+          <span className="sr-only leading-none sm:hidden">{t("leaderboards")}</span>
         </Link>
       </Button>
       <Button
@@ -105,8 +108,8 @@ function DashboardPrimaryNav({
             className="size-4 shrink-0 self-center"
             aria-hidden
           />
-          <span className="hidden leading-none sm:inline">Reglas</span>
-          <span className="sr-only leading-none sm:hidden">Reglas</span>
+          <span className="hidden leading-none sm:inline">{t("rules")}</span>
+          <span className="sr-only leading-none sm:hidden">{t("rules")}</span>
         </Link>
       </Button>
     </nav>
@@ -133,9 +136,11 @@ export function DashboardStickyHeader({
 }: {
   user: DashboardStickyHeaderUser
 }) {
+  const t = useTranslations("account")
+  const locale = useLocale()
   const [signingOut, setSigningOut] = useState(false)
 
-  const accountTitle = user.name?.trim() || user.email?.trim() || "Mi cuenta"
+  const accountTitle = user.name?.trim() || user.email?.trim() || t("myAccount")
   const accountSubtitle = user.email ?? undefined
 
   async function handleSignOut() {
@@ -143,7 +148,7 @@ export function DashboardStickyHeader({
     try {
       await authClient.signOut()
     } finally {
-      window.location.href = "/"
+      window.location.href = `/${locale}`
     }
   }
 
@@ -162,7 +167,6 @@ export function DashboardStickyHeader({
           </span>
         </Link>
 
-        {/* DropdownMenu before Suspense so useId order stays stable when searchParams branch differs SSR/client. flex-row-reverse → nav, then menu. */}
         <div className="flex min-w-0 shrink flex-row-reverse items-center gap-2 sm:gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -171,13 +175,13 @@ export function DashboardStickyHeader({
                 variant="outline"
                 size="icon"
                 className="size-8 shrink-0 rounded-full border-2 border-primary/20 bg-muted p-0"
-                aria-label="Menú de cuenta"
+                aria-label={t("accountMenuAria")}
               >
                 <Avatar size="default" className="size-full border-0 ring-0 after:border-0">
                   {user.image ? (
                     <AvatarImage
                       src={user.image}
-                      alt={user.name ?? user.email ?? "Usuario"}
+                      alt={user.name ?? user.email ?? t("userFallback")}
                     />
                   ) : null}
                   <AvatarFallback className="text-[10px] font-bold uppercase">
@@ -198,13 +202,17 @@ export function DashboardStickyHeader({
                 ) : null}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer" disabled title="Próximamente">
+              <div className="px-2 py-1.5">
+                <LanguageSwitcher />
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer" disabled title={t("comingSoon")}>
                 <UserIcon aria-hidden />
-                Perfil
+                {t("profile")}
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" disabled title="Próximamente">
+              <DropdownMenuItem className="cursor-pointer" disabled title={t("comingSoon")}>
                 <GearIcon aria-hidden />
-                Ajustes
+                {t("settings")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -216,7 +224,7 @@ export function DashboardStickyHeader({
                 }}
               >
                 <SignOut aria-hidden />
-                {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+                {signingOut ? t("signingOut") : t("signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

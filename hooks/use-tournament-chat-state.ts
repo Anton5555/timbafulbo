@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useQueryState } from "nuqs"
 
-import { getTournamentChatMessages } from "@/app/(authed)/dashboard/chat/actions"
+import { getTournamentChatMessages } from "@/app/[locale]/(authed)/dashboard/chat/actions"
 import { dashboardTournamentParser } from "@/components/dashboard/tournament-search-params"
 import type { TournamentChatMessageRow } from "@/lib/tournament-chat-data"
 

@@ -2,6 +2,7 @@
 
 import type { PenaltyWinnerSide } from "@/generated/prisma/client"
 import { InfoIcon, SoccerBallIcon } from "@phosphor-icons/react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import {
   useEffect,
@@ -12,7 +13,7 @@ import {
   useTransition,
 } from "react"
 
-import { upsertPrediction } from "@/app/(authed)/dashboard/prediction-actions"
+import { upsertPrediction } from "@/app/[locale]/(authed)/dashboard/prediction-actions"
 import {
   beginPredictionEdit,
   endPredictionEdit,
@@ -24,9 +25,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { TeamEmblem } from "@/components/team-emblem"
+import { useMatchLabels } from "@/hooks/use-match-labels"
 import { isKnockoutStage } from "@/lib/knockout-stage"
 import { isMatchLiveStatus } from "@/lib/match-status"
-import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
 import {
   getPredictionCloseTime,
   PREDICTION_LOCK_MINUTES_BEFORE,
@@ -42,12 +43,6 @@ const DEBOUNCE_MS = 2000
 const RESULT_DELAY_MS = 2 * 60 * 60 * 1000
 const SCORE_MIN = 0
 const SCORE_MAX = 30
-
-const predictionCloseTimeFmt = new Intl.DateTimeFormat("es", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-})
 
 function clampScore(n: number): number {
   return Math.max(SCORE_MIN, Math.min(SCORE_MAX, n))
@@ -67,19 +62,6 @@ function isCompleteScorePair(
     away >= SCORE_MIN &&
     away <= SCORE_MAX
   )
-}
-
-const timeFmt = new Intl.DateTimeFormat("es", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-})
-
-function stageCenterLabel(match: MatchesTabMatch): string {
-  if (match.stage === "GROUP") {
-    return match.group ? `Grupo ${match.group}` : STAGE_LABEL_ES[match.stage]
-  }
-  return STAGE_LABEL_ES[match.stage]
 }
 
 /** Penalties only in KO + draw in the predicted scoreline. */
@@ -122,6 +104,7 @@ function MatchTicketTeamColumn({
   allMatches: MatchesTabMatch[]
   beforeStartTime: string
 }) {
+  const t = useTranslations("matches")
   const [open, setOpen] = useState(false)
   const history = useMemo(() => {
     if (!open) return []
@@ -138,7 +121,7 @@ function MatchTicketTeamColumn({
             paddingClass,
             dimmed && "opacity-40 grayscale-[0.45]",
           )}
-          aria-label={`Ver resultados previos de ${team.name}`}
+          aria-label={t("viewPreviousResults", { team: team.name })}
         >
           <TeamEmblem name={team.name} code={team.code} size="sm" />
           <span className="mt-2 w-full min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-tighter sm:text-xs">
@@ -166,13 +149,21 @@ function MatchTicketCenter({
   hasScore: boolean
   resultDelayed: boolean
 }) {
-  const stage = stageCenterLabel(match)
+  const t = useTranslations("matches")
+  const { stageLabel, timeFmt } = useMatchLabels()
+
+  const stage = stageLabel(match.stage, match.group)
   const showPenaltiesResult =
     match.isFinal &&
     match.homeScore !== null &&
     match.awayScore !== null &&
     match.homeScore === match.awayScore &&
     match.penaltyWinner !== null
+
+  const penaltySide =
+    match.penaltyWinner === "HOME"
+      ? t("penaltiesHome")
+      : t("penaltiesAway")
 
   return (
     <div className="flex w-24 shrink-0 flex-col items-center justify-center border-x border-dashed border-border bg-muted/30 px-2 py-1 text-center sm:w-32">
@@ -192,8 +183,7 @@ function MatchTicketCenter({
         )}
         {showPenaltiesResult ? (
           <span className="max-w-44 text-[8px] font-bold leading-tight tracking-wide text-muted-foreground uppercase">
-            Por penales:{" "}
-            {match.penaltyWinner === "HOME" ? "Local" : "Visitante"}
+            {t("penalties", { side: penaltySide })}
           </span>
         ) : null}
       </div>
@@ -201,21 +191,20 @@ function MatchTicketCenter({
       {isLive ? (
         <span className="flex animate-pulse items-center gap-1 text-[9px] font-black uppercase tracking-tighter text-destructive">
           <span className="size-1 shrink-0 rounded-full bg-destructive" />
-          <span>En vivo</span>
+          <span>{t("status.live")}</span>
           {resultDelayed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   className="inline-flex shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="Información sobre demora de resultados"
+                  aria-label={t("resultDelayAria")}
                 >
                   <InfoIcon className="size-3" weight="bold" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-56 text-center">
-                Los resultados pueden tardar en llegar debido a restricciones de
-                la API. ¡Paciencia!
+                {t("resultDelayTooltip")}
               </TooltipContent>
             </Tooltip>
           ) : null}
@@ -226,7 +215,7 @@ function MatchTicketCenter({
             match.isFinal ? "text-muted-foreground/80" : "text-primary"
           }`}
         >
-          {match.isFinal ? "Finalizado" : "Próximamente"}
+          {match.isFinal ? t("status.finished") : t("status.upcoming")}
         </span>
       )}
     </div>
@@ -248,6 +237,7 @@ function ScoreStepper({
   disabled: boolean
   label: string
 }) {
+  const t = useTranslations("matches")
   const minusDisabled =
     disabled || (value !== null && value <= SCORE_MIN)
   const plusDisabled =
@@ -268,7 +258,7 @@ function ScoreStepper({
         className="shrink-0 rounded-none border-border"
         disabled={minusDisabled}
         onClick={() => onStep(-1)}
-        aria-label={`Quitar uno a ${label}`}
+        aria-label={t("stepperMinus", { label })}
       >
         −
       </Button>
@@ -281,7 +271,7 @@ function ScoreStepper({
             "min-w-6 text-center font-black tabular-nums underline decoration-dashed decoration-muted-foreground/50 underline-offset-4 transition-colors sm:min-w-8 sm:text-lg",
             "text-muted-foreground/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-50",
           )}
-          aria-label={`Empezar tu pronóstico en 0 (${label})`}
+          aria-label={t("stepperStart", { label })}
         >
           —
         </button>
@@ -302,7 +292,7 @@ function ScoreStepper({
         className="shrink-0 rounded-none border-border"
         disabled={plusDisabled}
         onClick={() => onStep(1)}
-        aria-label={`Sumar uno a ${label}`}
+        aria-label={t("stepperPlus", { label })}
       >
         +
       </Button>
@@ -310,14 +300,17 @@ function ScoreStepper({
   )
 }
 
-function liquidationOutcomeLabel(kind: "exact" | "result" | "miss"): string {
+function liquidationOutcomeLabel(
+  kind: "exact" | "result" | "miss",
+  t: ReturnType<typeof useTranslations<"matches">>
+): string {
   switch (kind) {
     case "exact":
-      return "Pleno"
+      return t("outcomeExact")
     case "result":
-      return "Acierto"
+      return t("outcomeResult")
     default:
-      return "Errado"
+      return t("outcomeMiss")
   }
 }
 
@@ -337,6 +330,8 @@ export function MatchPredictionTicket({
   applyToAllTournaments: boolean
 }) {
   const router = useRouter()
+  const t = useTranslations("matches")
+  const { predictionCloseTimeFmt } = useMatchLabels()
   const [isPending, startTransition] = useTransition()
   const [home, setHome] = useState<number | null>(
     () => match.userPrediction?.homeScore ?? null,
@@ -737,12 +732,12 @@ export function MatchPredictionTicket({
         <div className="border-t border-dashed border-border bg-muted/20 px-3 py-1.5 sm:px-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase sm:text-[10px]">
-              {showLiquidation ? "Liquidación" : "Tu pronóstico"}
+              {showLiquidation ? t("liquidation") : t("yourPrediction")}
             </span>
             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
               {predictionOpen ? (
                 <span className="text-[9px] font-bold tracking-widest text-muted-foreground uppercase sm:text-[10px]">
-                  Cierra {predictionCloseTimeLabel}
+                  {t("closesAt", { time: predictionCloseTimeLabel })}
                 </span>
               ) : null}
               {saving ? (
@@ -752,8 +747,8 @@ export function MatchPredictionTicket({
                     weight="duotone"
                     aria-hidden
                   />
-                  <span className="sr-only">Guardando pronóstico</span>
-                  <span aria-hidden>Guardando…</span>
+                  <span className="sr-only">{t("savingPrediction")}</span>
+                  <span aria-hidden>{t("saving")}</span>
                 </span>
               ) : null}
             </div>
@@ -766,7 +761,7 @@ export function MatchPredictionTicket({
                   value={home}
                   isGhosted={!isTouched}
                   disabled={saving}
-                  label="goles local"
+                  label={t("homeGoals")}
                   onStep={(delta) => applyScoreStep("home", delta)}
                   onArm={armScores}
                 />
@@ -775,7 +770,7 @@ export function MatchPredictionTicket({
                   value={away}
                   isGhosted={!isTouched}
                   disabled={saving}
-                  label="goles visitante"
+                  label={t("awayGoals")}
                   onStep={(delta) => applyScoreStep("away", delta)}
                   onArm={armScores}
                 />
@@ -797,7 +792,7 @@ export function MatchPredictionTicket({
                         : "text-muted-foreground",
                     )}
                   >
-                    Ganador por penales
+                    {t("penaltiesWinner")}
                   </span>
                   <div
                     className={cn(
@@ -821,7 +816,10 @@ export function MatchPredictionTicket({
                       disabled={saving}
                       onClick={() => onPenaltyPick("HOME")}
                       aria-pressed={penaltyWinner === "HOME"}
-                      aria-label={`Ganador por penales: local (${match.homeTeam.name})`}
+                      aria-label={t("penaltiesWinnerAria", {
+                        side: t("penaltiesHome"),
+                        team: match.homeTeam.name,
+                      })}
                     >
                       <span className="truncate">{match.homeTeam.name}</span>
                     </Button>
@@ -840,7 +838,10 @@ export function MatchPredictionTicket({
                       disabled={saving}
                       onClick={() => onPenaltyPick("AWAY")}
                       aria-pressed={penaltyWinner === "AWAY"}
-                      aria-label={`Ganador por penales: visitante (${match.awayTeam.name})`}
+                      aria-label={t("penaltiesWinnerAria", {
+                        side: t("penaltiesAway"),
+                        team: match.awayTeam.name,
+                      })}
                     >
                       <span className="truncate">{match.awayTeam.name}</span>
                     </Button>
@@ -856,7 +857,7 @@ export function MatchPredictionTicket({
                           : "text-muted-foreground",
                       )}
                     >
-                      Elegí quién pasa para guardar el pronóstico.
+                      {t("penaltiesPickHint")}
                     </p>
                   ) : null}
                 </div>
@@ -879,7 +880,7 @@ export function MatchPredictionTicket({
               >
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-80">
-                    Tu jugada
+                    {t("yourPlay")}
                   </span>
                   {match.userPrediction ? (
                     <>
@@ -892,23 +893,25 @@ export function MatchPredictionTicket({
                         match.userPrediction.awayScore &&
                       match.userPrediction.penaltyWinner ? (
                         <p className="text-[9px] font-bold tracking-wide text-muted-foreground uppercase">
-                          Por penales:{" "}
-                          {match.userPrediction.penaltyWinner === "HOME"
-                            ? "Local"
-                            : "Visitante"}
+                          {t("penalties", {
+                            side:
+                              match.userPrediction.penaltyWinner === "HOME"
+                                ? t("penaltiesHome")
+                                : t("penaltiesAway"),
+                          })}
                         </p>
                       ) : null}
                     </>
                   ) : (
                     <p className="text-sm font-black leading-tight text-foreground">
-                      Te dormiste: 0 pts
+                      {t("sleptIn")}
                     </p>
                   )}
                 </div>
 
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-80">
-                    Puntos
+                    {t("points")}
                   </span>
                   <div className="flex items-center gap-1.5">
                     {liquidationResult?.kind === "exact" ? (
@@ -945,13 +948,13 @@ export function MatchPredictionTicket({
                           "border-border bg-muted/40 text-muted-foreground",
                       )}
                     >
-                      {liquidationOutcomeLabel(liquidationResult.kind)}
+                      {liquidationOutcomeLabel(liquidationResult.kind, t)}
                     </span>
                   ) : null}
                 </div>
               </div>
               <p className="mt-2 text-center text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                Predicciones cerradas
+                {t("predictionsClosed")}
               </p>
             </>
           ) : (
@@ -967,22 +970,26 @@ export function MatchPredictionTicket({
                     match.userPrediction.awayScore &&
                   match.userPrediction.penaltyWinner ? (
                     <p className="mt-1 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
-                      Por penales:{" "}
-                      {match.userPrediction.penaltyWinner === "HOME"
-                        ? "Local"
-                        : "Visitante"}
+                      {t("penalties", {
+                        side:
+                          match.userPrediction.penaltyWinner === "HOME"
+                            ? t("penaltiesHome")
+                            : t("penaltiesAway"),
+                      })}
                     </p>
                   ) : null}
                 </>
               ) : (
                 <p className="text-xs font-bold text-muted-foreground">
-                  Sin jugada aún
+                  {t("noPlayYet")}
                 </p>
               )}
               <p className="mt-1 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
                 {!isLive && !match.isFinal
-                  ? `Pronósticos cerrados (${PREDICTION_LOCK_MINUTES_BEFORE} min antes del partido)`
-                  : "Predicciones cerradas"}
+                  ? t("predictionsClosedBefore", {
+                      minutes: PREDICTION_LOCK_MINUTES_BEFORE,
+                    })
+                  : t("predictionsClosed")}
               </p>
             </div>
           )}

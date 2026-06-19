@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 
-import { getTournamentChatMessages } from "@/app/(authed)/dashboard/chat/actions"
+import { getTournamentChatMessages } from "@/app/[locale]/(authed)/dashboard/chat/actions"
 import { getSupabaseClient } from "@/lib/supabase-client"
 import type { TournamentChatMessageRow } from "@/lib/tournament-chat-data"
 

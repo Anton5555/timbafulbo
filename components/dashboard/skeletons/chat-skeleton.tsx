@@ -1,11 +1,17 @@
+"use client"
+
+import { useTranslations } from "next-intl"
+
 import { SkeletonBlock, SkeletonLine } from "./primitives"
 
 export function ChatTabSkeleton() {
+  const t = useTranslations("chat")
+
   return (
     <div
       className="flex min-h-[min(70vh,32rem)] flex-col border border-border"
       aria-busy="true"
-      aria-label="Cargando chat"
+      aria-label={t("loadingAria")}
     >
       <div className="flex flex-col gap-2.5 border-b border-border bg-muted/10 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
         <SkeletonLine className="h-3 w-16" />

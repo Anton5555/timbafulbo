@@ -2,9 +2,10 @@
 
 import { useEffect, useRef } from "react"
 import { TrashIcon } from "@phosphor-icons/react"
+import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
 
-import { deleteTournamentChatMessage } from "@/app/(authed)/dashboard/chat/actions"
+import { deleteTournamentChatMessage } from "@/app/[locale]/(authed)/dashboard/chat/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SkeletonLine } from "@/components/dashboard/skeletons/primitives"
@@ -20,22 +21,15 @@ function initialsFromName(name: string): string {
   return name.slice(0, 2).toUpperCase()
 }
 
-function formatMessageTime(iso: string): string {
-  return new Intl.DateTimeFormat("es", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso))
-}
-
 const MESSAGE_LIST_SHELL =
   "flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3"
 
-function ChatMessagesSkeleton() {
+function ChatMessagesSkeleton({ ariaLabel }: { ariaLabel: string }) {
   return (
     <div
       className={MESSAGE_LIST_SHELL}
       aria-busy="true"
-      aria-label="Cargando mensajes"
+      aria-label={ariaLabel}
     >
       <div className="mt-auto flex flex-col gap-2">
         <div className="flex gap-2">
@@ -70,6 +64,7 @@ export function TournamentChatMessageList({
   onDeleted: (messageId: string) => void
   loading?: boolean
 }) {
+  const t = useTranslations("chat")
   const bottomRef = useRef<HTMLDivElement>(null)
   const prevCountRef = useRef(messages.length)
 
@@ -81,7 +76,7 @@ export function TournamentChatMessageList({
   }, [messages.length])
 
   if (loading && messages.length === 0) {
-    return <ChatMessagesSkeleton />
+    return <ChatMessagesSkeleton ariaLabel={t("loadingMessages")} />
   }
 
   if (messages.length === 0) {
@@ -93,7 +88,7 @@ export function TournamentChatMessageList({
         )}
       >
         <p className="text-sm text-muted-foreground">
-          Todavía no hay mensajes. Sé el primero en escribir.
+          {t("noMessages")}
         </p>
       </div>
     )
@@ -126,6 +121,9 @@ function ChatMessageRow({
   showHeader: boolean
   onDeleted: (messageId: string) => void
 }) {
+  const t = useTranslations("chat")
+  const locale = useLocale()
+
   async function handleDelete() {
     const res = await deleteTournamentChatMessage(message.id)
     if (!res.ok) {
@@ -134,6 +132,11 @@ function ChatMessageRow({
     }
     onDeleted(message.id)
   }
+
+  const timeLabel = new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(message.createdAt))
 
   return (
     <article
@@ -169,13 +172,13 @@ function ChatMessageRow({
             )}
           >
             <span className="text-[10px] font-bold tracking-wide text-foreground uppercase">
-              {message.isOwn ? "Vos" : message.userName}
+              {message.isOwn ? t("you") : message.userName}
             </span>
             <time
               dateTime={message.createdAt}
               className="text-[10px] text-muted-foreground tabular-nums"
             >
-              {formatMessageTime(message.createdAt)}
+              {timeLabel}
             </time>
           </div>
         ) : null}
@@ -197,10 +200,10 @@ function ChatMessageRow({
             size="sm"
             className="h-7 rounded-none px-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase hover:text-destructive"
             onClick={() => void handleDelete()}
-            aria-label="Eliminar mensaje"
+            aria-label={t("deleteMessage")}
           >
             <TrashIcon className="size-3.5" aria-hidden />
-            Eliminar
+            {t("delete")}
           </Button>
         ) : null}
       </div>

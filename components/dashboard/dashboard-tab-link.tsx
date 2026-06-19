@@ -1,10 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { useLinkStatus } from "next/link"
 import { type ReactNode } from "react"
 
 import { useNavigationPending } from "@/components/dashboard/navigation-pending-context"
+import { Link } from "@/i18n/routing"
 import { cn } from "@/lib/utils"
 
 function DashboardTabLinkStatus({ children }: { children: ReactNode }) {

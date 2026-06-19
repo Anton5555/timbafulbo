@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { CreateTournamentResponsiveShell } from "@/components/dashboard/create-tournament/responsive-shell"
 import { InviteToTournamentForm } from "@/components/dashboard/invite-to-tournament/invite-to-tournament-form"
@@ -22,6 +23,7 @@ export function InviteToTournamentTrigger({
   currentUserEmail: string | null
   inviteFromEmail: string
 }) {
+  const t = useTranslations("inviteByEmail")
   const [open, setOpen] = useState(false)
   const [formNonce, setFormNonce] = useState(0)
   const wasOpenRef = useRef(false)
@@ -50,11 +52,11 @@ export function InviteToTournamentTrigger({
         <CreateTournamentResponsiveShell
           open={open}
           onOpenChange={handleOpenChange}
-          title="> INVITAR_A_LIGA"
-          description="Agregá correos y gestioná invitaciones pendientes."
+          title={t("triggerTitle")}
+          description={t("triggerDescription")}
           footer={
             <p className="text-center text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-              timbafulbo · Invites con token seguro
+              {t("triggerFooter")}
             </p>
           }
         >

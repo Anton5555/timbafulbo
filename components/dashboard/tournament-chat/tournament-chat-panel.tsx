@@ -2,6 +2,7 @@
 
 import { useCallback, type Dispatch, type SetStateAction } from "react"
 import { ChatsCircleIcon } from "@phosphor-icons/react"
+import { useTranslations } from "next-intl"
 
 import {
   useTournamentChatStream,
@@ -28,6 +29,8 @@ export function TournamentChatPanel({
   loading?: boolean
   className?: string
 }) {
+  const t = useTranslations("chat")
+
   const handleStreamEvent = useCallback(
     (event: TournamentChatStreamEvent) => {
       if (event.type === "refresh") {
@@ -62,7 +65,7 @@ export function TournamentChatPanel({
         "flex min-h-[20rem] flex-col border border-border bg-card lg:min-h-[24rem]",
         className
       )}
-      aria-label={`Chat de ${tournamentName}`}
+      aria-label={t("panelAria", { name: tournamentName })}
     >
       <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
@@ -73,7 +76,7 @@ export function TournamentChatPanel({
           />
           <div className="min-w-0">
             <h3 className="truncate text-[10px] font-black tracking-[0.2em] text-primary uppercase">
-              Chat
+              {t("panelTitle")}
             </h3>
             <p className="truncate text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
               {tournamentName}
@@ -85,9 +88,9 @@ export function TournamentChatPanel({
             "shrink-0 text-[10px] font-bold tracking-widest uppercase",
             isConnected ? "text-primary" : "text-muted-foreground"
           )}
-          title={isConnected ? "Conectado en tiempo real" : "Reconectando…"}
+          title={isConnected ? t("connected") : t("reconnecting")}
         >
-          {isConnected ? "En vivo" : "…"}
+          {isConnected ? t("live") : "…"}
         </span>
       </header>
 

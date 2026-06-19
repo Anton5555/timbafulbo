@@ -6,6 +6,7 @@ import { z } from "zod"
 
 import { PenaltyWinnerSide } from "@/generated/prisma/client"
 import { DASHBOARD_SECTION_PATH } from "@/lib/dashboard-routes"
+import { actionError, actionErrorFromZod } from "@/lib/action-errors"
 import { auth } from "@/lib/auth"
 import { isKnockoutStage } from "@/lib/knockout-stage"
 import { getTournamentsForUser } from "@/lib/dashboard-data"
@@ -38,7 +39,7 @@ export async function upsertPrediction(
 ): Promise<UpsertPredictionResult> {
   const parsed = upsertSchema.safeParse(input)
   if (!parsed.success) {
-    return { ok: false, error: "Datos inválidos." }
+    return { ok: false, error: await actionError("invalidData") }
   }
 
   const { tournamentId, matchId, homeScore, awayScore } = parsed.data
@@ -52,12 +53,12 @@ export async function upsertPrediction(
   })
   const userId = session?.user?.id
   if (!userId) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
 
   const allowed = await userHasTournamentAccess(userId, tournamentId)
   if (!allowed) {
-    return { ok: false, error: "No tenés acceso a este torneo." }
+    return { ok: false, error: await actionError("noTournamentAccess") }
   }
 
   const match = await prisma.match.findUnique({
@@ -65,7 +66,7 @@ export async function upsertPrediction(
     select: { id: true, startTime: true, isFinal: true, stage: true },
   })
   if (!match) {
-    return { ok: false, error: "Partido no encontrado." }
+    return { ok: false, error: await actionError("matchNotFound") }
   }
 
   if (
@@ -76,7 +77,7 @@ export async function upsertPrediction(
   ) {
     return {
       ok: false,
-      error: "Predicciones cerradas para este partido.",
+      error: await actionError("predictionsClosed"),
       code: "prediction-closed",
     }
   }
@@ -86,20 +87,19 @@ export async function upsertPrediction(
   if (!ko && penaltyWinnerInput !== null) {
     return {
       ok: false,
-      error: "El ganador por penales solo aplica en fase eliminatoria.",
+      error: await actionError("penaltyWinnerKnockoutOnly"),
     }
   }
   if (ko && homeScore !== awayScore && penaltyWinnerInput !== null) {
     return {
       ok: false,
-      error: "Si no hay empate en el marcador, no corresponde ganador por penales.",
+      error: await actionError("penaltyWinnerNeedsDraw"),
     }
   }
   if (ko && homeScore === awayScore && penaltyWinnerInput === null) {
     return {
       ok: false,
-      error:
-        "En eliminatorias con empate tenés que elegir quién gana por penales.",
+      error: await actionError("penaltyWinnerRequired"),
     }
   }
 
@@ -118,12 +118,12 @@ export async function upsertPrediction(
   }
 
   if (targetTournamentIds.length === 0) {
-    return { ok: false, error: "No tenés ligas para guardar." }
+    return { ok: false, error: await actionError("noLeaguesToSave") }
   }
 
   const primaryIndex = targetTournamentIds.indexOf(tournamentId)
   if (primaryIndex < 0) {
-    return { ok: false, error: "No tenés acceso a este torneo." }
+    return { ok: false, error: await actionError("noTournamentAccess") }
   }
 
   try {
@@ -187,7 +187,7 @@ export async function upsertPrediction(
       penaltyWinner: row.penaltyWinner,
     }
   } catch {
-    return { ok: false, error: "No se pudo guardar. Probá de nuevo." }
+    return { ok: false, error: await actionError("saveFailed") }
   }
 }
 
@@ -197,7 +197,7 @@ const copyPredictionsSchema = z
     targetTournamentId: z.string().min(1),
   })
   .refine((d) => d.sourceTournamentId !== d.targetTournamentId, {
-    message: "Elegí otra liga.",
+    message: "pickOtherLeague",
   })
 
 export type CopyPredictionsFromLeagueResult =
@@ -214,8 +214,7 @@ export async function copyPredictionsFromLeague(
 ): Promise<CopyPredictionsFromLeagueResult> {
   const parsed = copyPredictionsSchema.safeParse(input)
   if (!parsed.success) {
-    const err = parsed.error.issues[0]?.message ?? "Datos inválidos."
-    return { ok: false, error: err }
+    return { ok: false, error: await actionErrorFromZod(parsed.error) }
   }
 
   const { sourceTournamentId, targetTournamentId } = parsed.data
@@ -225,7 +224,7 @@ export async function copyPredictionsFromLeague(
   })
   const userId = session?.user?.id
   if (!userId) {
-    return { ok: false, error: "No hay sesión." }
+    return { ok: false, error: await actionError("noSession") }
   }
 
   const [sourceAllowed, targetAllowed] = await Promise.all([
@@ -233,7 +232,7 @@ export async function copyPredictionsFromLeague(
     userHasTournamentAccess(userId, targetTournamentId),
   ])
   if (!sourceAllowed || !targetAllowed) {
-    return { ok: false, error: "No tenés acceso a una o ambas ligas." }
+    return { ok: false, error: await actionError("noAccessToLeagues") }
   }
 
   const nowMs = Date.now()
@@ -329,7 +328,7 @@ export async function copyPredictionsFromLeague(
       ),
     ])
   } catch {
-    return { ok: false, error: "No se pudieron copiar los pronósticos. Probá de nuevo." }
+    return { ok: false, error: await actionError("copyPredictionsFailed") }
   }
 
   revalidatePath("/dashboard")

@@ -1,6 +1,7 @@
 "use client"
 
 import { InfoIcon } from "@phosphor-icons/react"
+import { useTranslations } from "next-intl"
 
 import { TeamEmblem } from "@/components/team-emblem"
 import {
@@ -8,24 +9,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { STAGE_LABEL_ES } from "@/lib/match-stage-labels"
+import { useMatchLabels } from "@/hooks/use-match-labels"
 
 import type { MatchesTabMatch, MatchesTabTeam } from "./types"
 
 const RESULT_DELAY_MS = 2 * 60 * 60 * 1000
-
-const timeFmt = new Intl.DateTimeFormat("es", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-})
-
-function stageCenterLabel(match: MatchesTabMatch): string {
-  if (match.stage === "GROUP") {
-    return match.group ? `Grupo ${match.group}` : STAGE_LABEL_ES[match.stage]
-  }
-  return STAGE_LABEL_ES[match.stage]
-}
 
 function TicketSideNotches() {
   return (
@@ -35,7 +23,7 @@ function TicketSideNotches() {
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute top-1/2 -right-1.5 size-3 -translate-y-1/2 rounded-full border-l border-border bg-background"
+        className="pointer-events-none absolute top-1/2 -right-3 size-3 -translate-y-1/2 rounded-full border-l border-border bg-background"
         aria-hidden
       />
     </>
@@ -77,13 +65,21 @@ function MatchTicketCenter({
   hasScore: boolean
   resultDelayed: boolean
 }) {
-  const stage = stageCenterLabel(match)
+  const t = useTranslations("matches")
+  const { stageLabel, timeFmt } = useMatchLabels()
+
+  const stage = stageLabel(match.stage, match.group)
   const showPenaltiesResult =
     hasScore &&
     match.homeScore !== null &&
     match.awayScore !== null &&
     match.homeScore === match.awayScore &&
     match.penaltyWinner !== null
+
+  const penaltySide =
+    match.penaltyWinner === "HOME"
+      ? t("penaltiesHome")
+      : t("penaltiesAway")
 
   return (
     <div className="flex w-24 shrink-0 flex-col items-center justify-center border-x border-dashed border-border bg-muted/30 px-2 py-1 text-center sm:w-32">
@@ -103,8 +99,7 @@ function MatchTicketCenter({
         )}
         {showPenaltiesResult ? (
           <span className="max-w-[11rem] text-[8px] font-bold leading-tight tracking-wide text-muted-foreground uppercase">
-            Por penales:{" "}
-            {match.penaltyWinner === "HOME" ? "Local" : "Visitante"}
+            {t("penalties", { side: penaltySide })}
           </span>
         ) : null}
       </div>
@@ -112,21 +107,20 @@ function MatchTicketCenter({
       {isLive ? (
         <span className="flex animate-pulse items-center gap-1 text-[9px] font-black uppercase tracking-tighter text-destructive">
           <span className="size-1 shrink-0 rounded-full bg-destructive" />
-          <span>En vivo</span>
+          <span>{t("status.live")}</span>
           {resultDelayed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   className="inline-flex shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="Información sobre demora de resultados"
+                  aria-label={t("resultDelayAria")}
                 >
                   <InfoIcon className="size-3" weight="bold" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-56 text-center">
-                Los resultados pueden tardar en llegar debido a restricciones de
-                la API. ¡Paciencia!
+                {t("resultDelayTooltip")}
               </TooltipContent>
             </Tooltip>
           ) : null}
@@ -137,7 +131,7 @@ function MatchTicketCenter({
             match.isFinal ? "text-muted-foreground/80" : "text-primary"
           }`}
         >
-          {match.isFinal ? "Finalizado" : "Próximamente"}
+          {match.isFinal ? t("status.finished") : t("status.upcoming")}
         </span>
       )}
     </div>

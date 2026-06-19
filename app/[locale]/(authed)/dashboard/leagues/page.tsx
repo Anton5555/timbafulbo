@@ -1,18 +1,20 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
+import { getTranslations } from "next-intl/server"
 
 import {
   loadUserTournaments,
   redirectToDefaultTournamentIfInvalid,
   requireAuthenticatedDashboardUser,
-} from "@/app/(authed)/dashboard/_lib/dashboard-page-context"
+} from "@/app/[locale]/(authed)/dashboard/_lib/dashboard-page-context"
 import { MyLeaguesTab } from "@/components/dashboard/my-leagues-tab"
 import { LeaguesTabSkeleton } from "@/components/dashboard/skeletons"
 import { env } from "@/env"
 import { getMyTournaments, getTournamentWinner } from "@/lib/dashboard-data"
 
-export const metadata: Metadata = {
-  title: "Mis ligas",
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("nav")
+  return { title: t("myLeagues") }
 }
 
 export const dynamic = "force-dynamic"
@@ -27,7 +29,7 @@ async function LeaguesContent({
   const { userId, userEmail } = await requireAuthenticatedDashboardUser()
   const tournaments = await loadUserTournaments(userId)
 
-  redirectToDefaultTournamentIfInvalid({
+  await redirectToDefaultTournamentIfInvalid({
     tab: "leagues",
     tournaments,
     requestedTournamentId: tournament,
