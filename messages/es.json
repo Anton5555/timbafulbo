@@ -112,7 +112,16 @@
     "outcomeExact": "Pleno",
     "outcomeResult": "Acierto",
     "outcomeMiss": "Errado",
-    "viewPreviousResults": "Ver resultados previos de {team}"
+    "viewPreviousResults": "Ver resultados previos de {team}",
+    "seeLeaguePredictions": "Ver pronósticos de la liga",
+    "leaguePredictionsTitle": "Pronósticos de la liga",
+    "leaguePredictionsPlayer": "Jugador",
+    "leaguePredictionsPick": "Pronóstico",
+    "leaguePredictionsSleptIn": "Sin pronóstico",
+    "leaguePredictionsYou": "Vos",
+    "leaguePredictionsLoading": "Cargando…",
+    "leaguePredictionsLoadError": "No se pudieron cargar los pronósticos.",
+    "leaguePredictionsEmpty": "No hay miembros en esta liga."
   },
   "teamHistory": {
     "won": "Ganó",

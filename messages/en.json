@@ -112,7 +112,16 @@
     "outcomeExact": "Exact",
     "outcomeResult": "Result",
     "outcomeMiss": "Miss",
-    "viewPreviousResults": "View previous results for {team}"
+    "viewPreviousResults": "View previous results for {team}",
+    "seeLeaguePredictions": "See league predictions",
+    "leaguePredictionsTitle": "League predictions",
+    "leaguePredictionsPlayer": "Player",
+    "leaguePredictionsPick": "Prediction",
+    "leaguePredictionsSleptIn": "No prediction",
+    "leaguePredictionsYou": "You",
+    "leaguePredictionsLoading": "Loading…",
+    "leaguePredictionsLoadError": "Could not load predictions.",
+    "leaguePredictionsEmpty": "No members in this league."
   },
   "teamHistory": {
     "won": "Won",

@@ -36,6 +36,7 @@ import { getTeamResultsHistory } from "@/lib/team-results-history"
 import { cn } from "@/lib/utils"
 
 import { TeamHistoryTooltipContent } from "./team-history-tooltip"
+import { LeaguePredictions } from "./league-predictions-dialog"
 import type { MatchesTabMatch, MatchesTabTeam } from "./types"
 
 /** Long enough to set local + visitante (and penalties) without mid-edit saves. */
@@ -353,6 +354,10 @@ export function MatchPredictionTicket({
   const [forceClosed, setForceClosed] = useState(false)
 
   const predictionOpen = match.predictionOpen && !forceClosed
+  const showLeaguePredictions =
+    predictionsEnabled &&
+    Boolean(tournamentId) &&
+    (!predictionOpen || match.isFinal)
 
   const lastPersisted = useRef<{
     home: number
@@ -998,6 +1003,17 @@ export function MatchPredictionTicket({
             <p className="mt-2 text-center text-[10px] font-medium text-destructive">
               {errorMsg}
             </p>
+          ) : null}
+
+          {showLeaguePredictions ? (
+            <LeaguePredictions
+              matchId={match.id}
+              tournamentId={tournamentId}
+              homeTeam={match.homeTeam}
+              awayTeam={match.awayTeam}
+              stage={match.stage}
+              isFinal={match.isFinal}
+            />
           ) : null}
         </div>
       ) : null}
