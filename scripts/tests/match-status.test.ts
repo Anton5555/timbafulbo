@@ -81,9 +81,49 @@ assert.equal(
 )
 
 assert.equal(
-  shouldPollMatchStatuses([baseMatch({ isFinal: false })], Date.now()),
+  shouldPollMatchStatuses(
+    [
+      baseMatch({
+        isFinal: false,
+        startTime: new Date(Date.now() + 7 * 24 * 60 * MS).toISOString(),
+      }),
+    ],
+    Date.now(),
+  ),
+  false,
+  "far-future unfinished matches should not poll",
+)
+
+assert.equal(
+  shouldPollMatchStatuses(
+    [
+      baseMatch({
+        isFinal: false,
+        status: "IN_PLAY",
+        startTime: new Date(Date.now() - 30 * MS).toISOString(),
+      }),
+    ],
+    Date.now(),
+  ),
   true,
-  "unfinished matches should keep polling active",
+  "live matches should keep polling active",
+)
+
+assert.equal(
+  shouldPollMatchStatuses(
+    [
+      baseMatch({
+        isFinal: false,
+        startTime: new Date(Date.now() + 2 * MS).toISOString(),
+      }),
+    ],
+    Date.now() +
+      2 * MS -
+      PREDICTION_LOCK_MINUTES_BEFORE * MS -
+      4 * MS,
+  ),
+  true,
+  "matches near prediction lock should keep polling active",
 )
 
 assert.equal(
@@ -232,8 +272,8 @@ assert.match(
 )
 assert.match(
   hookSource,
-  /30_000/,
-  "polling hook should use a 30 second interval",
+  /60_000/,
+  "polling hook should use a 60 second interval",
 )
 assert.doesNotMatch(
   hookSource,

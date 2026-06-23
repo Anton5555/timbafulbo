@@ -122,5 +122,12 @@ export async function GET(request: Request) {
       )
     })
 
-  return NextResponse.json({ statuses, serverTimeMs: nowMs })
+  return NextResponse.json(
+    { statuses, serverTimeMs: nowMs },
+    {
+      headers: {
+        "Cache-Control": "private, max-age=15",
+      },
+    },
+  )
 }

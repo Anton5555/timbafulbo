@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useRef } from "react"
 
 /** Soft-refresh the dashboard RSC payload (leaderboards, new stages, scores). */
-const REFRESH_INTERVAL_MS = 2 * 60_000
+const REFRESH_INTERVAL_MS = 10 * 60_000
 /** Refresh on focus only if the tab was hidden at least this long. */
 const HIDDEN_REFRESH_THRESHOLD_MS = 60_000
 

@@ -13,15 +13,17 @@ import { getPredictionCloseTime } from "@/lib/prediction-window"
 import type { MatchesTabMatch } from "./types"
 
 /** Poll cadence while a match is live or about to lock. */
-const POLL_INTERVAL_ACTIVE_MS = 30_000
+const POLL_INTERVAL_ACTIVE_MS = 60_000
 /** Poll cadence when nothing is live (matches still pending). */
-const POLL_INTERVAL_IDLE_MS = 180_000
+const POLL_INTERVAL_IDLE_MS = 5 * 60_000
 /** Base tick used to re-evaluate which cadence applies. */
-const POLL_TICK_MS = 30_000
+const POLL_TICK_MS = 60_000
 /** Server route caps matchIds at 64 per request. */
 const STATUS_BATCH_SIZE = 64
 /** Window around the lock close where we keep the fast cadence. */
 const NEAR_LOCK_MS = 5 * 60_000
+/** Only fast-poll within this window after kickoff. */
+const ACTIVE_MATCH_WINDOW_MS = 3 * 60 * 60_000
 
 type StatusResponse = {
   statuses: MatchStatusDto[]
@@ -42,8 +44,10 @@ function hasActiveMatch(matches: MatchesTabMatch[], nowMs: number): boolean {
     if (m.isFinal) continue
     if (isMatchLiveStatus(m.status)) return true
     const startMs = new Date(m.startTime).getTime()
-    // Started but result not final yet (covers missing live status from the API).
-    if (startMs <= nowMs) return true
+    // Started but result not final yet — only within the active window.
+    if (startMs <= nowMs && nowMs <= startMs + ACTIVE_MATCH_WINDOW_MS) {
+      return true
+    }
     // Approaching the prediction lock: keep status fresh for the cutoff.
     const closeMs = getPredictionCloseTime(new Date(m.startTime)).getTime()
     if (nowMs >= closeMs - NEAR_LOCK_MS) return true
@@ -120,7 +124,6 @@ export function useMatchStatusPolling({
           }
           const res = await fetch(
             `/dashboard/matches/status?${params.toString()}`,
-            { cache: "no-store" },
           )
           if (!res.ok) return null
           const body = (await res.json()) as StatusResponse
@@ -174,7 +177,7 @@ export function useMatchStatusPolling({
       )
         ? POLL_INTERVAL_ACTIVE_MS
         : POLL_INTERVAL_IDLE_MS
-      // Small slack so a 30s tick satisfies a 30s cadence.
+      // Small slack so a 60s tick satisfies a 60s cadence.
       if (nowMs - lastFetchMsRef.current < desiredInterval - 1_000) return
       void fetchStatuses()
     }, POLL_TICK_MS)

@@ -15,6 +15,8 @@ import type { TournamentRules } from "@/lib/tournament-rules"
 const MS = 60_000
 /** Poll more often when a match is within this window of the prediction lock. */
 const NEAR_LOCK_MS = 5 * MS
+/** Keep polling non-final matches within this window after kickoff. */
+const ACTIVE_MATCH_WINDOW_MS = 3 * 60 * MS
 
 export type MatchStatusDto = {
   id: string
@@ -116,18 +118,36 @@ export function mergeMatchStatusIntoTabMatch(
   }
 }
 
+function isNearPredictionLock(startTime: string, nowMs: number): boolean {
+  const closeAt =
+    new Date(startTime).getTime() - PREDICTION_LOCK_MINUTES_BEFORE * MS
+  return nowMs >= closeAt - NEAR_LOCK_MS
+}
+
 /** Whether the client should keep polling match status for the given list. */
 export function shouldPollMatchStatuses(
   matches: MatchesTabMatch[],
   nowMs: number,
 ): boolean {
   for (const m of matches) {
-    if (!m.isFinal) return true
-    if (m.predictionOpen) {
-      const closeAt =
-        new Date(m.startTime).getTime() -
-        PREDICTION_LOCK_MINUTES_BEFORE * MS
-      if (nowMs >= closeAt - NEAR_LOCK_MS) return true
+    if (m.isFinal) {
+      if (m.predictionOpen && isNearPredictionLock(m.startTime, nowMs)) {
+        return true
+      }
+      continue
+    }
+
+    const startMs = new Date(m.startTime).getTime()
+
+    if (isMatchLiveStatus(m.status)) return true
+    if (
+      startMs <= nowMs &&
+      nowMs <= startMs + ACTIVE_MATCH_WINDOW_MS
+    ) {
+      return true
+    }
+    if (isNearPredictionLock(m.startTime, nowMs) && nowMs < startMs) {
+      return true
     }
   }
   return false
