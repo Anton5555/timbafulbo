@@ -70,7 +70,9 @@ function MatchesTabMatchList({
     : displayMatches
   const grouped =
     predictionsEnabled && activeFilter === "finished"
-      ? groupMatchesByStage(filtered, (stage) => stageLabel(stage))
+      ? groupMatchesByStage(filtered, (stage) => stageLabel(stage), {
+          matchOrder: "desc",
+        })
       : groupMatchesByLocalDay(filtered, dateHeadingFmt)
   const defaultOpenGroups = grouped.map((g) => g.key)
 

@@ -35,7 +35,7 @@ import {
 import { getTeamResultsHistory } from "@/lib/team-results-history"
 import { cn } from "@/lib/utils"
 
-import { TeamHistoryTooltipContent } from "./team-history-tooltip"
+import { TeamHistoryHybridTooltip } from "./team-history-tooltip"
 import { LeaguePredictions } from "./league-predictions-dialog"
 import type { MatchesTabMatch, MatchesTabTeam } from "./types"
 
@@ -112,28 +112,31 @@ function MatchTicketTeamColumn({
     return getTeamResultsHistory(team.code, allMatches, beforeStartTime)
   }, [open, team.code, allMatches, beforeStartTime])
 
+  const trigger = (
+    <button
+      type="button"
+      className={cn(
+        "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center border-0 bg-transparent py-2 text-inherit transition-opacity sm:cursor-default",
+        paddingClass,
+        dimmed && "opacity-40 grayscale-[0.45]",
+      )}
+      aria-label={t("viewPreviousResults", { team: team.name })}
+    >
+      <TeamEmblem name={team.name} code={team.code} size="sm" />
+      <span className="mt-2 w-full min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-tighter sm:text-xs">
+        {team.name}
+      </span>
+    </button>
+  )
+
   return (
-    <Tooltip open={open} onOpenChange={setOpen}>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "flex min-w-0 flex-1 cursor-default flex-col items-center justify-center border-0 bg-transparent py-2 text-inherit transition-opacity",
-            paddingClass,
-            dimmed && "opacity-40 grayscale-[0.45]",
-          )}
-          aria-label={t("viewPreviousResults", { team: team.name })}
-        >
-          <TeamEmblem name={team.name} code={team.code} size="sm" />
-          <span className="mt-2 w-full min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-tighter sm:text-xs">
-            {team.name}
-          </span>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-72 p-0 text-left">
-        <TeamHistoryTooltipContent teamName={team.name} history={history} />
-      </TooltipContent>
-    </Tooltip>
+    <TeamHistoryHybridTooltip
+      teamName={team.name}
+      history={history}
+      open={open}
+      onOpenChange={setOpen}
+      trigger={trigger}
+    />
   )
 }
 

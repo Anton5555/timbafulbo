@@ -38,9 +38,15 @@ const STAGE_ORDER_DESC: MatchStage[] = [
   "GROUP",
 ]
 
-function sortMatchesByStartTime(matches: MatchesTabMatch[]) {
+function sortMatchesByStartTime(
+  matches: MatchesTabMatch[],
+  order: "asc" | "desc" = "asc",
+) {
+  const sign = order === "asc" ? 1 : -1
   matches.sort(
-    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    (a, b) =>
+      sign *
+      (new Date(a.startTime).getTime() - new Date(b.startTime).getTime()),
   )
 }
 
@@ -75,8 +81,10 @@ export function groupMatchesByLocalDay(
 
 export function groupMatchesByStage(
   matches: MatchesTabMatch[],
-  getStageLabel: (stage: MatchStage) => string
+  getStageLabel: (stage: MatchStage) => string,
+  options?: { matchOrder?: "asc" | "desc" },
 ): MatchGroup[] {
+  const matchOrder = options?.matchOrder ?? "asc"
   const map = new Map<MatchStage, MatchesTabMatch[]>()
   for (const m of matches) {
     const list = map.get(m.stage)
@@ -84,7 +92,7 @@ export function groupMatchesByStage(
     else map.set(m.stage, [m])
   }
   for (const list of map.values()) {
-    sortMatchesByStartTime(list)
+    sortMatchesByStartTime(list, matchOrder)
   }
   return STAGE_ORDER_DESC.filter((stage) => map.has(stage)).map((stage) => ({
     key: stage,
