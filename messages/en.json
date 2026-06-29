@@ -150,7 +150,13 @@
     "exactScore": "Exact score",
     "resultOnly": "Result (not exact)",
     "phaseBonus": "Knockout bonus",
-    "phaseBonusDetail": "×2 in semis, 3rd place and final"
+    "phaseBonusDetail": "×2 in semis, 3rd place and final",
+    "knockoutPenalties": "Knockout penalties",
+    "knockoutPenaltiesIntro": "In knockout rounds, if you predict a draw you must pick who wins on penalties.",
+    "knockoutPenaltiesExact": "Exact tie + correct penalty winner → {exactPts} pts (exact score).",
+    "knockoutPenaltiesResult": "Any predicted draw + correct penalty winner, wrong tie score → {resultPts} pts (result only).",
+    "knockoutPenaltiesMiss": "Wrong penalty winner → 0 pts (even if the tie score is exact).",
+    "knockoutPenaltiesMultiplierNote": "In semis, 3rd place and final those points are doubled (×2)."
   },
   "leagues": {
     "title": "My leagues",

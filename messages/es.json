@@ -150,7 +150,13 @@
     "exactScore": "Pleno exacto",
     "resultOnly": "Resultado (sin pleno)",
     "phaseBonus": "Bonus de fase",
-    "phaseBonusDetail": "×2 en semis, 3er puesto y final"
+    "phaseBonusDetail": "×2 en semis, 3er puesto y final",
+    "knockoutPenalties": "Eliminatorias y penales",
+    "knockoutPenaltiesIntro": "En eliminatorias, si pronosticás empate, tenés que elegir quién gana por penales.",
+    "knockoutPenaltiesExact": "Empate exacto + ganador por penales correcto → {exactPts} pts (pleno exacto).",
+    "knockoutPenaltiesResult": "Empate predicho + ganador por penales correcto, sin pleno → {resultPts} pts (resultado).",
+    "knockoutPenaltiesMiss": "Ganador por penales incorrecto → 0 pts (aunque el marcador de empate sea exacto).",
+    "knockoutPenaltiesMultiplierNote": "En semis, 3er puesto y final esos puntos se multiplican ×2."
   },
   "leagues": {
     "title": "Mis ligas",
