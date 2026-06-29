@@ -74,10 +74,18 @@ export type FullSyncSummary = {
   apiMatches: number
   imported: number
   skippedUndefinedTeams: number
+  skippedFinalized: number
   teams: number
   created: number
   updated: number
   changes: FullMatchChange[]
+}
+
+/** Full sync must not rewrite rows already finalized in our DB (scores stay on incremental). */
+export function shouldSkipFullSyncUpdate(
+  existing: { isFinal: boolean } | null | undefined,
+): boolean {
+  return existing?.isFinal === true
 }
 
 export type SyncSummary = IncrementalSyncSummary | FullSyncSummary
@@ -225,13 +233,13 @@ export function logSyncSummary(summary: SyncSummary): void {
     const touched = summary.created + summary.updated
     if (touched === 0) {
       console.log(
-        `[sync-wc] mode=full Sin cambios en BD: ${summary.apiMatches} partidos en API, ${summary.imported} importables, ${summary.skippedUndefinedTeams} omitidos sin equipos, ${summary.teams} equipos en API`,
+        `[sync-wc] mode=full Sin cambios en BD: ${summary.apiMatches} partidos en API, ${summary.imported} importables, ${summary.skippedUndefinedTeams} omitidos sin equipos, ${summary.skippedFinalized} ya finalizados omitidos, ${summary.teams} equipos en API`,
       )
       return
     }
 
     console.log(
-      `[sync-wc] mode=full Sincronización completa: ${summary.created} creado(s), ${summary.updated} actualizado(s) (${summary.imported}/${summary.apiMatches} partidos importables, ${summary.skippedUndefinedTeams} omitidos sin equipos, ${summary.teams} equipos)`,
+      `[sync-wc] mode=full Sincronización completa: ${summary.created} creado(s), ${summary.updated} actualizado(s) (${summary.imported}/${summary.apiMatches} partidos importables, ${summary.skippedUndefinedTeams} omitidos sin equipos, ${summary.skippedFinalized} ya finalizados omitidos, ${summary.teams} equipos)`,
     )
   } else if (summary.candidates === 0) {
     console.log(
@@ -307,12 +315,17 @@ export async function syncWcScoresFull(
 
   let created = 0
   let updated = 0
+  let skippedFinalized = 0
   const changes: FullMatchChange[] = []
   for (const m of matchesToImport) {
     const before = await prisma.match.findUnique({
       where: { footballDataId: m.id },
-      select: { id: true },
+      select: { id: true, isFinal: true },
     })
+    if (shouldSkipFullSyncUpdate(before)) {
+      skippedFinalized += 1
+      continue
+    }
     await upsertWcMatchFromApi(prisma, m)
     const action = before ? "updated" : "created"
     if (before) updated += 1
@@ -338,6 +351,7 @@ export async function syncWcScoresFull(
     apiMatches: apiMatches.length,
     imported: matchesToImport.length,
     skippedUndefinedTeams: matchesSkipped,
+    skippedFinalized,
     teams: apiTeams.length,
     created,
     updated,

@@ -112,7 +112,7 @@ pnpm prisma:seed
 The seed wipes and reloads everything; to sync live data from football-data.org without deleting predictions there are two modes (same script):
 
 - **Incremental:** updates **only** match scores and status for matches in the upcoming window (see below).
-- **Full (`pnpm football-data:sync:wc:full`):** upserts **all** competition teams and **all** WC matches (includes newly created knockout pairings and schedule/team changes).
+- **Full (`pnpm football-data:sync:wc:full`):** upserts **all** competition teams and WC matches that are **not already finalized** in the DB (creates new knockout pairings and updates open fixtures). Rows with `isFinal = true` are left unchanged so scored group games are not rewritten.
 
 - **Requirements in `.env`:** `DATABASE_URL` and `FOOTBALL_DATA_API_TOKEN` (same token as the refresh step).
 
@@ -123,7 +123,7 @@ The seed wipes and reloads everything; to sync live data from football-data.org 
 
 **Full mode**
 
-- Calls `GET .../matches?season=2026` and `GET .../teams?season=2026` in parallel, upserts teams and **all** matches (creates new pairings, updates `stage`, teams, kickoff time, scores). **Does not delete** predictions.
+- Calls `GET .../matches?season=2026` and `GET .../teams?season=2026` in parallel, upserts teams and importable matches. **Creates** new API fixtures (e.g. confirmed knockouts) and **updates** rows that are still open (`isFinal = false`). Skips matches already finalized in the DB — use incremental sync to adjust live/finished scores. **Does not delete** predictions.
 
 ```bash
 pnpm prisma:generate   # if you haven't generated the client in this clone yet
