@@ -85,6 +85,42 @@ export function parseFootballDataMatchStatus(
   }
 }
 
+/** Score block from football-data v4 `match.score`. */
+export type FootballDataMatchScore = {
+  winner?: string | null
+  duration?: string | null
+  fullTime?: { home: number | null; away: number | null }
+  regularTime?: { home: number | null; away: number | null }
+  extraTime?: { home: number | null; away: number | null }
+  penalties?: { home: number | null; away: number | null }
+}
+
+/**
+ * Scores we persist for predictions: 90' (+ extra time when played).
+ * For penalty shootouts, `fullTime` from the API includes shootout goals; use
+ * `regularTime` + `extraTime` instead so knockout draws stay tied on the board.
+ */
+export function resolveMatchScoresFromApi(
+  score: FootballDataMatchScore | null | undefined,
+): { home: number | null; away: number | null } {
+  if (!score) return { home: null, away: null }
+
+  const duration = score.duration?.trim().toUpperCase()
+  if (duration === "PENALTY_SHOOTOUT" && score.regularTime) {
+    const rt = score.regularTime
+    const et = score.extraTime
+    return {
+      home: (rt.home ?? 0) + (et?.home ?? 0),
+      away: (rt.away ?? 0) + (et?.away ?? 0),
+    }
+  }
+
+  return {
+    home: score.fullTime?.home ?? null,
+    away: score.fullTime?.away ?? null,
+  }
+}
+
 /**
  * True when a match should be treated as final in our DB: football-data reports
  * FINISHED and both full-time scores are present (free tier may lag on scores).

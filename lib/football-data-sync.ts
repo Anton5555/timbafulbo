@@ -8,6 +8,8 @@ import {
   parseFootballDataMatchStatus,
   parseGroupLetterFromApiGroup,
   resolveMatchIsFinalFromApi,
+  resolveMatchScoresFromApi,
+  type FootballDataMatchScore,
 } from "@/lib/football-data"
 import type { ApiMatch, ApiTeam } from "@/lib/football-data-wc-upsert"
 import {
@@ -33,10 +35,7 @@ type ApiMatchScoreOnly = {
   stage: string
   group: string | null
   lastUpdated: string
-  score?: {
-    winner?: string | null
-    fullTime?: { home: number | null; away: number | null }
-  }
+  score?: FootballDataMatchScore
 }
 
 export type IncrementalMatchChange = {
@@ -333,8 +332,9 @@ export async function syncWcScoresFull(
 
     const stage = mapFootballDataStageToMatchStage(m.stage)
     const parsedStatus = parseFootballDataMatchStatus(m.status)
-    const homeScore = m.score?.fullTime?.home ?? null
-    const awayScore = m.score?.fullTime?.away ?? null
+    const { home: homeScore, away: awayScore } = resolveMatchScoresFromApi(
+      m.score,
+    )
     changes.push({
       footballDataId: m.id,
       label: matchLabelFromApiMatch(m),
@@ -369,7 +369,15 @@ export async function syncWcScoresIncremental(
   const candidates = await prisma.match.findMany({
     where: {
       startTime: { lte: windowEnd },
-      OR: [{ isFinal: false }, { isFinal: true, homeScore: null }],
+      OR: [
+        { isFinal: false },
+        { isFinal: true, homeScore: null },
+        {
+          isFinal: true,
+          penaltyWinner: null,
+          stage: { not: "GROUP" },
+        },
+      ],
     },
     select: {
       id: true,
@@ -435,8 +443,9 @@ export async function syncWcScoresIncremental(
     }
 
     const nextStatus = parseFootballDataMatchStatus(api.status)
-    const nextHome = api.score?.fullTime?.home ?? null
-    const nextAway = api.score?.fullTime?.away ?? null
+    const { home: nextHome, away: nextAway } = resolveMatchScoresFromApi(
+      api.score,
+    )
     const nextLastUpdated = new Date(api.lastUpdated)
     const nextIsFinal = resolveMatchIsFinalFromApi(
       nextStatus,

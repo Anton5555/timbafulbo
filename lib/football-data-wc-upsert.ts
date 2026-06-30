@@ -5,6 +5,8 @@ import {
   parseFootballDataMatchStatus,
   parseGroupLetterFromApiGroup,
   resolveMatchIsFinalFromApi,
+  resolveMatchScoresFromApi,
+  type FootballDataMatchScore,
 } from "@/lib/football-data"
 import { isKnockoutStage } from "@/lib/knockout-stage"
 import { flagCdnUrlFromTeamCode } from "@/lib/flagcdn"
@@ -36,11 +38,7 @@ export type ApiMatch = {
   lastUpdated: string
   homeTeam: ApiTeam
   awayTeam: ApiTeam
-  score?: {
-    winner?: string | null
-    duration?: string | null
-    fullTime?: { home: number | null; away: number | null }
-  }
+  score?: FootballDataMatchScore
 }
 
 function hasPositiveTeamId(team: ApiTeam | null | undefined): boolean {
@@ -173,8 +171,9 @@ export async function upsertWcMatchFromApi(
   const lastUpdated = new Date(m.lastUpdated)
   const parsedStatus = parseFootballDataMatchStatus(m.status)
   const apiSyncedAt = new Date()
-  const homeScore = m.score?.fullTime?.home ?? null
-  const awayScore = m.score?.fullTime?.away ?? null
+  const { home: homeScore, away: awayScore } = resolveMatchScoresFromApi(
+    m.score,
+  )
   const isFinal = resolveMatchIsFinalFromApi(
     parsedStatus,
     homeScore,
