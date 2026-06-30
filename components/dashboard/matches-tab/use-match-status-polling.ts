@@ -12,12 +12,12 @@ import { getPredictionCloseTime } from "@/lib/prediction-window"
 
 import type { MatchesTabMatch } from "./types"
 
-/** Poll cadence while a match is live or about to lock. */
-const POLL_INTERVAL_ACTIVE_MS = 60_000
+/** Poll cadence while a match is live or about to lock (cron syncs scores every 5 min). */
+const POLL_INTERVAL_ACTIVE_MS = 3 * 60_000
 /** Poll cadence when nothing is live (matches still pending). */
-const POLL_INTERVAL_IDLE_MS = 5 * 60_000
+const POLL_INTERVAL_IDLE_MS = 15 * 60_000
 /** Base tick used to re-evaluate which cadence applies. */
-const POLL_TICK_MS = 60_000
+const POLL_TICK_MS = 2 * 60_000
 /** Server route caps matchIds at 64 per request. */
 const STATUS_BATCH_SIZE = 64
 /** Window around the lock close where we keep the fast cadence. */
@@ -177,8 +177,8 @@ export function useMatchStatusPolling({
       )
         ? POLL_INTERVAL_ACTIVE_MS
         : POLL_INTERVAL_IDLE_MS
-      // Small slack so a 60s tick satisfies a 60s cadence.
-      if (nowMs - lastFetchMsRef.current < desiredInterval - 1_000) return
+      // Small slack so a tick can satisfy the desired cadence.
+      if (nowMs - lastFetchMsRef.current < desiredInterval - 2_000) return
       void fetchStatuses()
     }, POLL_TICK_MS)
 
