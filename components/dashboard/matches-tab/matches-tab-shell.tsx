@@ -76,6 +76,24 @@ function MatchesTabMatchList({
       : groupMatchesByLocalDay(filtered, dateHeadingFmt)
   const defaultOpenGroups = grouped.map((g) => g.key)
 
+  const halfWidthSet = new Set<number>()
+  {
+    let i = 0
+    while (i < grouped.length) {
+      if (
+        grouped[i].matches.length === 1 &&
+        i + 1 < grouped.length &&
+        grouped[i + 1].matches.length === 1
+      ) {
+        halfWidthSet.add(i)
+        halfWidthSet.add(i + 1)
+        i += 2
+      } else {
+        i++
+      }
+    }
+  }
+
   if (filtered.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/10 px-4 py-12 text-center">
@@ -90,9 +108,9 @@ function MatchesTabMatchList({
     <Accordion
       type="multiple"
       defaultValue={defaultOpenGroups}
-      className="flex flex-col gap-3"
+      className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2"
     >
-      {grouped.map(({ key, label, matches: groupMatches }) => (
+      {grouped.map(({ key, label, matches: groupMatches }, idx) => (
         <MatchDaySection
           key={key}
           groupKey={key}
@@ -103,6 +121,7 @@ function MatchesTabMatchList({
           tournamentId={tournamentId}
           predictionsEnabled={predictionsEnabled}
           applyToAllTournaments={applyToAllTournaments}
+          className={halfWidthSet.has(idx) ? undefined : "sm:col-span-2"}
         />
       ))}
     </Accordion>
