@@ -4,10 +4,8 @@ import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   BookBookmarkIcon,
-  GearIcon,
   SignOut,
   TrophyIcon,
-  UserIcon,
 } from "@phosphor-icons/react"
 import { useLocale, useTranslations } from "next-intl"
 
@@ -205,15 +203,6 @@ export function DashboardStickyHeader({
               <div className="px-2 py-1.5">
                 <LanguageSwitcher />
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer" disabled title={t("comingSoon")}>
-                <UserIcon aria-hidden />
-                {t("profile")}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" disabled title={t("comingSoon")}>
-                <GearIcon aria-hidden />
-                {t("settings")}
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
