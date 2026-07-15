@@ -21,6 +21,7 @@ export function MatchDaySection({
   tournamentId,
   predictionsEnabled,
   applyToAllTournaments,
+  className,
 }: {
   groupKey: string
   headingLabel: string
@@ -30,6 +31,7 @@ export function MatchDaySection({
   tournamentId: string
   predictionsEnabled: boolean
   applyToAllTournaments: boolean
+  className?: string
 }) {
   const t = useTranslations("matches")
 
@@ -41,7 +43,7 @@ export function MatchDaySection({
   return (
     <AccordionItem
       value={groupKey}
-      className="border border-border bg-card/50 not-last:border-b-0"
+      className={cn("border border-border bg-card/50", className)}
     >
       <AccordionTrigger
         className={cn(
@@ -66,7 +68,7 @@ export function MatchDaySection({
       </AccordionTrigger>
 
       <AccordionContent className="border-t border-border/60 bg-background/40 pb-4 pt-4">
-        <div className="grid grid-cols-1 items-start gap-3 px-3 lg:grid-cols-2">
+        <div className={cn("grid grid-cols-1 items-start gap-3 px-3", matches.length > 1 && "lg:grid-cols-2")}>
           {matches.map((match) => (
             <MatchPredictionTicket
               key={`${tournamentId}-${match.id}`}
