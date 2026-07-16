@@ -1,7 +1,7 @@
 "use client"
 
 import type { PenaltyWinnerSide } from "@/generated/prisma/client"
-import { InfoIcon, SoccerBallIcon } from "@phosphor-icons/react"
+import { InfoIcon, SoccerBallIcon, TrophyIcon } from "@phosphor-icons/react"
 import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import {
@@ -171,7 +171,17 @@ function MatchTicketCenter({
 
   return (
     <div className="flex w-24 shrink-0 flex-col items-center justify-center border-x border-dashed border-border bg-muted/30 px-2 py-1 text-center sm:w-32">
-      <span className="inline-block max-w-[min(100%,11rem)] truncate rounded-sm bg-primary/10 px-1.5 py-0.5 text-center text-[9px] font-bold uppercase tracking-wider text-primary sm:text-[10px]">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 max-w-[min(100%,11rem)] truncate rounded-sm px-1.5 py-0.5 text-center text-[9px] font-bold uppercase tracking-wider sm:text-[10px]",
+          match.stage === "FINAL"
+            ? "bg-amber-500/15 text-amber-400"
+            : "bg-primary/10 text-primary",
+        )}
+      >
+        {match.stage === "FINAL" && (
+          <TrophyIcon className="size-2.5 shrink-0" weight="duotone" />
+        )}
         {stage}
       </span>
 
@@ -702,8 +712,15 @@ export function MatchPredictionTicket({
   return (
     <article
       className={cn(
-        "group relative flex flex-col border border-border bg-card transition-all",
+        "group relative flex flex-col border bg-card transition-all",
+        match.stage === "FINAL"
+          ? "border-amber-500/40 bg-amber-500/5 ring-1 ring-amber-500/20"
+          : "border-border",
         predictionsEnabled && predictionOpen && "hover:border-primary/50",
+        match.stage === "FINAL" &&
+          predictionsEnabled &&
+          predictionOpen &&
+          "hover:border-amber-400/60",
         saveState === "error" && "border-destructive/60",
         showLiquidation &&
           liquidationResult?.kind === "exact" &&

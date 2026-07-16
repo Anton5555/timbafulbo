@@ -1,6 +1,6 @@
 "use client"
 
-import { InfoIcon } from "@phosphor-icons/react"
+import { InfoIcon, TrophyIcon } from "@phosphor-icons/react"
 import { useTranslations } from "next-intl"
 
 import { TeamEmblem } from "@/components/team-emblem"
@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useMatchLabels } from "@/hooks/use-match-labels"
+import { cn } from "@/lib/utils"
 
 import type { MatchesTabMatch, MatchesTabTeam } from "./types"
 
@@ -83,7 +84,17 @@ function MatchTicketCenter({
 
   return (
     <div className="flex w-24 shrink-0 flex-col items-center justify-center border-x border-dashed border-border bg-muted/30 px-2 py-1 text-center sm:w-32">
-      <span className="inline-block max-w-[min(100%,11rem)] truncate rounded-sm bg-primary/10 px-1.5 py-0.5 text-center text-[9px] font-bold uppercase tracking-wider text-primary sm:text-[10px]">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 max-w-[min(100%,11rem)] truncate rounded-sm px-1.5 py-0.5 text-center text-[9px] font-bold uppercase tracking-wider sm:text-[10px]",
+          match.stage === "FINAL"
+            ? "bg-amber-500/15 text-amber-400"
+            : "bg-primary/10 text-primary",
+        )}
+      >
+        {match.stage === "FINAL" && (
+          <TrophyIcon className="size-2.5 shrink-0" weight="duotone" />
+        )}
         {stage}
       </span>
 
@@ -157,7 +168,14 @@ export function MatchTicketCard({
     referenceTimeMs - start.getTime() >= RESULT_DELAY_MS
 
   return (
-    <article className="group relative flex items-stretch border border-border bg-card transition-all hover:border-primary/50">
+    <article
+      className={cn(
+        "group relative flex items-stretch border bg-card transition-all hover:border-primary/50",
+        match.stage === "FINAL"
+          ? "border-amber-500/40 bg-amber-500/5 ring-1 ring-amber-500/20 hover:border-amber-400/60"
+          : "border-border",
+      )}
+    >
       <TicketSideNotches />
       <MatchTicketTeamColumn team={match.homeTeam} paddingClass="pr-2 pl-5" />
       <MatchTicketCenter
